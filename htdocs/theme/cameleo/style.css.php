@@ -2126,77 +2126,42 @@ div.table-val-border-col {
 /*
  * DataTables display
  */     
-
-tr.odd {    
-font-family:arial,tahoma,verdana,helvetica;
-background-color: #EAEAEA;
+table.display{
+        background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
+        background-position: top right;
+        background-repeat: repeat-x;
+        font-size: 12px;
+        border-radius : 8px 8px 8px 8px;
+        padding : 0 0px 8px 0px;   
+        border : 1px solid #D0D0D0;
+	clear: both;
+	width: 100%;
 }
 
-tr.odd:hover {    
-background-color: #C0C4C7;
-}
-tr.even:hover {    
-background-color: #C0C4C7;
-}
-tr.even {
-font-family:arial,tahoma,verdana,helvetica;	
-background-color: white;
-}
-tr.odd a{
-font-family:arial,tahoma,verdana,helvetica;
-}
-tr.even a{
-font-family:arial,tahoma,verdana,helvetica;
+table.display thead th {
+	padding: 0px 18px 3px 10px;
+	border-bottom: 1px solid black;
+        border-width:0px 0px 0px 0px;
+	font-weight: bold;
+	cursor: pointer;
+        color:#842F00;
+        font-family:"Trebuchet MS",Arial,Helvetica,sans-serif;
+
+	
 }
 
-/* DataTables sorting */
- 
-.sorting {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_both.png' ?>) no-repeat center right;
-}
- 
-.sorting_asc {
-         
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_asc.png' ?>) no-repeat center right;
+table.display tfoot th {
+	padding: 3px 18px 3px 10px;
+	border-top: 1px solid black;
+	font-weight: bold;
 }
 
-.sorting_desc {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_desc.png' ?>) no-repeat center right;
+table.display tr.heading2 td {
+	border-bottom: 1px solid #aaa;
 }
 
-.dataTables_info {
-        
-}
-
-.dataTables_paginate {
-	width: 44px;
-	* width: 50px;
-	float: right;
-	text-align: right;
-        padding: 2px;
-}
-
-/* Pagination nested */
-.paginate_disabled_previous, .paginate_enabled_previous, .paginate_disabled_next, .paginate_enabled_next {
-	height: 19px;
-	width: 19px;
-	margin-left: 3px;
-	float: left;
-}
-.paginate_disabled_previous {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/back_disabled.jpg' ?>) no-repeat center right;
-}
-
-.paginate_enabled_previous {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/previous.png' ?>) no-repeat center right;
-}
-
-.paginate_disabled_next {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/forward_disabled.jpg' ?>) no-repeat center right;
-}
-
-.paginate_enabled_next {
-	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/next.png' ?>) no-repeat center right;
+table.display td {
+	padding: 3px 3px;
 }
 
 table.display td.center {
@@ -2224,9 +2189,24 @@ tr.even a{
 font-family:arial,tahoma,verdana,helvetica;
 }
 
+ /* DataTables sorting */
+ 
+.sorting {
+	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_both.png'?>) no-repeat center right;
+}
+ 
+.sorting_asc {
+         
+	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_asc.png'?>) no-repeat center right;
+}
+
+.sorting_desc {
+	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_desc.png'?>) no-repeat center right;
+}
 /* search input */
 
 .dataTables_filter {
+	margin-top:10px;
         width: 50%;
 	float: right;
 	text-align: right;
@@ -2238,11 +2218,314 @@ font-family:arial,tahoma,verdana,helvetica;
 }
 
 /*
- * CONTAINER Bouton Export
+ * CONTAINER
  * TableTools container element and styles applying to all components
  */
 div.DTTT_container {
+	float: left;
+	margin-bottom: 1em;
+}
+button.DTTT_button {
+	position: relative;
+	height: 30px;
+	margin-right: 3px;
+	padding: 3px 5px;
+	border: 1px solid #d0d0d0;
+	background-color: #fff;
+	cursor: pointer;
+}
+.dataTables_length {
+    float: left;
+    width: 40%;
+    margin-top:5px;
+}
+
+/*
+ * BUTTON_STYLES
+ * Action specific button styles
+ */
+
+button.DTTT_button_xls {
+	padding-right: 30px;
+	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/xls.png'?>) no-repeat center right;
+}
+
+button.DTTT_button_xls_hover {
+	padding-right: 30px;
+	border: 1px solid #999;
+	background: #f0f0f0 url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/xls_hover.png'?>) no-repeat center right;
+}
+button.DTTT_button_text {
+}
+
+/* detail */ 
+table.display td {
+    font-size:12px;
+    padding: 3px 10px;
+}
+td.details {
+    background-color: #D1CFD0;
+    border: 2px solid #A19B9E;
+}
+
+
+}
+.dataTables_paginate {
+	width: 44px;
+	* width: 50px;
+	float: right;
 	text-align: right;
+}
+
+
+/* Pagination nested */
+.paginate_disabled_previous, .paginate_enabled_previous, .paginate_disabled_next, .paginate_enabled_next {
+	height: 19px;
+	width: 19px;
+	margin-left: 3px;
+	float: left;
+}
+
+.paginate_disabled_previous {
+	background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/back_disabled.jpg'?>);
+}
+
+.paginate_enabled_previous {
+	background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/back_enabled.jpg'?>);
+}
+
+.paginate_disabled_next {
+	background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/forward_disabled.jpg'?>);
+}
+
+.paginate_enabled_next {
+	background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/forward_enabled.jpg'?>);
+}
+
+/* processing msg */
+.dataTables_processing {
+	position: fixed;
+	top: 40%;
+	left: 50%;
+	width: 250px;
+	height: 30px;
+	margin-left: -125px;
+	margin-top: -15px;
+	padding: 14px 0 2px 0;
+	border: 1px solid #ddd;
+	text-align: center;
+	color: #999;
+	font-size: 14px;
+	background-color: white;
+}
+.inputSearch{
+width: 80px;
+}
+
+/* hide/show table */
+table.hideshow
+{
+font-size: 12px;
+padding : 0px; 
+margin:0px;
+}
+table.hideshow td a
+{
+font-size: 12px;
+color:#000;
+font-weight: normal;
+font-family:"Trebuchet MS",Arial,Helvetica,sans-serif;
+}
+table.hideshow td p
+{
+font-size: 12px;
+font-weight: bold;
+color:#000;
+font-family:"Trebuchet MS",Arial,Helvetica,sans-serif;
+}
+/* focus td */
+table.KeyTable {
+border-collapse: separate;
+}
+table.KeyTable td {
+border: 3px solid transparent;
+padding: 0px 5px;
+}
+table.KeyTable td.focus {
+border: 3px solid #3366FF;
+}
+/* grouping by */
+td.group {
+	background-color: #d1cfd0;
+	border-bottom: 2px solid #A19B9E;
+	border-top: 2px solid #A19B9E;
+}
+
+/* ============================================================================== */
+/* mouvement                                                                      */
+/* ============================================================================== */
+form.mouvement
+{
+display: inline-block;
+vertical-align: top;
+width:500px;
+border: 1px solid #D0D0D0;
+border-radius:8px 8px 8px 8px;
+}
+form.mouvement div.entete{
+height:25px;
+background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
+background-position: top right;
+background-repeat: repeat-x;
+}
+form.mouvement p
+{
+padding:0px;
+margin:0px;
+}
+form.mouvement p.compteur
+{
+display: inline-block;
+margin-left:150px;
+}
+form.mouvement h3
+{
+margin:0;
+margin-left:5px;
+color:#842F00;
+display: inline-block;
+}
+
+textarea.tracking{
+margin:5px;
+width:300px;
+height:50px;
+}
+input.entrepot{
+vertical-align: top;
+margin-top:5px;
+width:50px;
+}
+input.submit{
+width:80px;
+height:18px;
+vertical-align: top;
+margin-top:5px;
+margin-left:5px;
+}
+
+/* ============================================================================== */
+/* Etat stock                                                                     */
+/* ============================================================================== */
+
+
+form.entete_etatstock{
+padding:5px;
+padding-left:0px;
+}
+form.entete_etatstock input{
+margin:0px;
+margin-top:3px;
+padding:0px;
+
+}
+
+/* ============================================================================== */
+/* Inventaire total                                                               */
+/* ============================================================================== */
+form.inventaire_total
+{
+margin-right:10px;
+display: inline-block;
+vertical-align: top;
+width:49%;
+border: 1px solid #D0D0D0;
+border-radius:8px 8px 8px 8px;
+}
+form.inventaire_total h3
+{
+margin:0;
+margin-left:5px;
+color:#842F00;
+display: inline-block;
+vertical-align: baseline;
+}
+form.inventaire_total div.entete{
+background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
+background-position: top right;
+background-repeat: repeat-x;
+height:25px;
+}
+
+textarea.emplacement_numeropiece_numserie{
+margin:5px;
+width:300px;
+height:50px;
+}
+div.choixentrepot
+{
+display: inline-block;
+margin-left:90px;
+vertical-align: baseline;
+}
+.choixentrepot a{
+vertical-align: baseline;
+}
+.choixentrepot label{
+vertical-align: baseline;
+}
+span.compteur
+{
+vertical-align: middle;
+margin-left:60px;
+}
+input.entrepot{
+vertical-align: top;
+margin-top:5px; 
+width:50px;
+}
+
+
+/* ============================================================================== */
+/* Inventaire Partiel                                                             */
+/* ============================================================================== */
+form.inventaire_partiel{
+display: inline-block;
+vertical-align: top;
+width:49%;
+border: 1px solid #D0D0D0;
+border-radius:8px 8px 8px 8px;
+}
+form.inventaire_partiel div.entete{
+background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
+background-position: top right;
+background-repeat: repeat-x;
+height:25px;
+}
+form.inventaire_partiel p
+{
+margin:0px;
+padding:0px;
+margin-left:5px;
+}
+form.inventaire_partiel h3
+{
+margin:0;
+margin-left:5px;
+margin-top:3px;
+color:#842F00;
+display: inline-block;
+vertical-align:baseline;
+}
+div.piece_archive{
+border: 1px solid #D0D0D0;
+border-radius:8px 8px 8px 8px;
+margin:5px;
+}
+div.piece_inventaire{
+border: 1px solid #D0D0D0;
+border-radius:8px 8px 8px 8px;
+margin:5px;
 }
 
 <?php
