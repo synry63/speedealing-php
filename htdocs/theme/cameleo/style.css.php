@@ -2373,6 +2373,8 @@ border: 1px solid #D0D0D0;
 border-radius:8px 8px 8px 8px;
 }
 form.mouvement div.entete{
+border: 1px solid transparent;
+border-radius:8px 8px 8px 8px;
 height:25px;
 background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
 background-position: top right;
@@ -2451,6 +2453,8 @@ display: inline-block;
 vertical-align: baseline;
 }
 form.inventaire_total div.entete{
+border: 1px solid transparent;
+border-radius:8px 8px 8px 8px;
 background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
 background-position: top right;
 background-repeat: repeat-x;
@@ -2474,9 +2478,13 @@ vertical-align: baseline;
 .choixentrepot label{
 vertical-align: baseline;
 }
+.choixentrepot select{
+vertical-align: baseline;
+height:21px;
+}
 span.compteur
 {
-vertical-align: middle;
+vertical-align: baseline;
 margin-left:60px;
 }
 input.entrepot{
@@ -2497,6 +2505,8 @@ border: 1px solid #D0D0D0;
 border-radius:8px 8px 8px 8px;
 }
 form.inventaire_partiel div.entete{
+border: 1px solid transparent;
+border-radius:8px 8px 8px 8px;
 background-image: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/bg_liste_titremenu.jpg'?>);
 background-position: top right;
 background-repeat: repeat-x;
