@@ -1,7 +1,7 @@
 <?php
 /* Copyright (C) 2005      Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2005-2009 Laurent Destailleur	<eldy@users.sourceforge.net>
- * Copyright (C) 2005-2011 Regis Houssin		<regis@dolibarr.fr>
+ * Copyright (C) 2005-2012 Regis Houssin		<regis@dolibarr.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -195,8 +195,7 @@ Class pdf_expedition_rouget extends ModelePdfExpedition
 					if (! empty($object->note_public))
 					{
 						$pdf->SetFont('','', $default_font_size - 1);   // Dans boucle pour gerer multi-page
-						$pdf->SetXY($this->posxdesc-1, $tab_top);
-						$pdf->MultiCell(190, 3, $outputlangs->convToOutputCharset($object->note_public), 0, 'L');
+						$pdf->writeHTMLCell(190, 3, $this->posxdesc-1, $tab_top, $outputlangs->convToOutputCharset($object->note_public), 0, 1);
 					}
 
 					$nexY = $pdf->GetY();
@@ -344,7 +343,8 @@ Class pdf_expedition_rouget extends ModelePdfExpedition
 		{
 			if (is_readable($logo))
 			{
-				$pdf->Image($logo, $this->marge_gauche, $posy, 0, 22);	// width=0 (auto), max height=22
+			    $height=pdf_getHeightForLogo($logo);
+			    $pdf->Image($logo, $this->marge_gauche, $posy, 0, $height);	// width=0 (auto)
 			}
 			else
 			{

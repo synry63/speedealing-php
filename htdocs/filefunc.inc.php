@@ -29,7 +29,7 @@
  *  \brief      File that include conf.php file and commons lib like functions.lib.php
  */
 
-if (! defined('DOL_VERSION')) define('DOL_VERSION','3.2.0-alpha');	// Also defined in htdocs/install/inc.php (Ex: x.y.z-alpha, x.y.z)
+if (! defined('DOL_VERSION')) define('DOL_VERSION','3.3.0-alpha');	// Also defined in htdocs/install/inc.php (Ex: x.y.z-alpha, x.y.z)
 if (! defined('EURO')) define('EURO',chr(128));
 
 // Define syslog constants
@@ -228,7 +228,11 @@ include_once(DOL_DOCUMENT_ROOT ."/core/lib/functions.lib.php");
 include_once(DOL_DOCUMENT_ROOT ."/core/lib/security.lib.php");
 //print memory_get_usage();
 
-include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchbase.php");
+include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couch.php");
+include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couchClient.php");
+include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couchDocument.php");
+
+$couch = new couchClient("http://couch.symeos.com:5984/","demo");
 
 // If password is encoded, we decode it
 if (preg_match('/crypted:/i',$dolibarr_main_db_pass) || ! empty($dolibarr_main_db_encrypted_pass))

@@ -38,15 +38,6 @@ $type = $_GET['type'];
 $pstcomm = $_GET['pstcomm'];
 $search_sale = $_GET['search_sale'];
 
-$cb = new Couchbase;
-$cb->addCouchbaseServer("localhost",11211,8092);
-$flush=0;
-        if($flush) {
-            $cb->flush();
-            $cb->couchbase->deleteDb("default", $cb);
-            $cb->couchbase->createDb("default", $cb);
-        }
-
 // start storing data
 
 $output = array(
@@ -55,14 +46,12 @@ $output = array(
     "iTotalDisplayRecords" => 0,
     "aaData" => array()
 );
-        
-$view = $cb->getView("lookup", "list_company");
-//print_r($cb->getAllDocsView());
-$result = $view->getResult(array("reduce" => false,"limit"=>10000,"skip"=>0,"startkey"=>""));
-/*get companies. usefull to get their sales and categories */
+
+$result = $couch->limit(1000)->getView('societe','list');
+
 
 //print_r($result);
-
+//exit;
 $iTotal=  count($result->rows);
 $output["iTotalRecords"]=$iTotal;
 $output["iTotalDisplayRecords"]=$iTotal;
@@ -70,13 +59,14 @@ $output["iTotalDisplayRecords"]=$iTotal;
 $prospectstatic = new Prospect($db);
 
 
-
 foreach($result->rows AS $aRow) {
     if(!isset($aRow->value->commerciaux))
         $aRow->value->commerciaux=null;
      if(!isset($aRow->value->category))
         $aRow->value->category=null;
-    unset($aRow->value->llx);
+    unset($aRow->value->class);
+    unset($aRow->value->_rev);
+    unset($aRow->value->_id);
     $output["aaData"][]=$aRow->value;
     unset($aRow);
 }

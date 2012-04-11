@@ -63,7 +63,7 @@ $search_sale = $_GET['search_sale'];
 /*
  * Paging
  */
-//$sLimit = " LIMIT 10000";
+//$sLimit = " LIMIT 100";
 if (isset($_GET['iDisplayStart']) && $_GET['iDisplayLength'] != '-1') {
     $sLimit = " LIMIT " . $_GET['iDisplayStart'] . ", " .
             $_GET['iDisplayLength'];
@@ -243,23 +243,42 @@ if($search_sale || $_GET['sSearch_7']!=""){
 $sql.= $sOrder;
 $sql.= $sLimit;
 $resultSocietes = $db->query($sql);
+exit;
+//$cb = new couchClient("http://193.169.46.49:5984/","dolibarr");
+//$cb = new Couchbase;
+//$cb->default_bucket_name="dolibarr";
+//$cb->addCouchbaseServer("localhost",11211,8092);
 
-$cb = new Couchbase;
-$cb->addCouchbaseServer("localhost",11211,8092);
+//$cb->flush();
 
+//$uuid=$cb->uuid($iTotal); //generation des uuids
 
 /*get companies. usefull to get their sales and categories */
+$i=0;
+
 while ($aRow = $db->fetch_object($resultSocietes)) {
     //if($ancinneValeur!=$aRow->rowid){ //do not insert the (next on the result query) same contact
         //$valueR = $valueR . $aRow->rowid . ',';
-        $col[] = $aRow;
+        
         //$row=  get_object_vars($aRow);
         //$ancinneValeur = $aRow->rowid;
-        $aRow->llx="societe";
-        $cb->set($aRow->rowid,  json_encode($aRow));
+        $aRow->class="societe";
+        //$cb->set($uuid[$i],  json_encode($aRow));
+        //$aRow->_id=$aRow->rowid;
+        $col[$aRow->rowid] = $aRow;
+        
+        /*try {
+                $cb->storeDoc($aRow);
+        } catch (Exception $e) {
+            echo "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+            //exit(1);
+        }*/
+        
+        $i++;
     //}
 }
-
+$db->free($resultSocietes);
+unset($resultSocietes);
 
 $companies = '""';
 if ($valueR != '') {
@@ -268,103 +287,67 @@ if ($valueR != '') {
 /* sql query get sales */
 $sql = " SELECT fk_soc,login FROM (llx_societe_commerciaux as sc,llx_user as u) 
 where "/*sc.fk_soc in ($companies) and*/." sc.fk_user=u.rowid";
+//$sql .= " LIMIT 100";
 $resultCommerciaux = $db->query($sql);
 
-/* sql query get categories */
-$sql = " SELECT fk_societe,label FROM (llx_categorie_societe as cs,llx_categorie as c) 
-where "/*cs.fk_societe in ($companies) and*/ ."cs.fk_categorie=c.rowid";
-$resultCate = $db->query($sql);
-
-$prospectstatic = new Prospect($db);
-$commerciauxDeChaqueSociete = array();
-$categoriesDeChaqueSociete = array();
-$output = array(
-    "sEcho" => intval($_GET['sEcho']),
-    "iTotalRecords" => $iTotal,
-    "iTotalDisplayRecords" => $iTotal,
-    "aaData" => array()
-);
 /* init society sales array  */
 while ($aRow = $db->fetch_object($resultCommerciaux)) {
-    $commerciauxDeChaqueSociete[$aRow->fk_soc] = $commerciauxDeChaqueSociete[$aRow->fk_soc] . $aRow->login . ', ';
-    $result=$cb->get($aRow->fk_soc);
-    //
-    if($result){
+    //$commerciauxDeChaqueSociete[$aRow->fk_soc] = $commerciauxDeChaqueSociete[$aRow->fk_soc] . $aRow->login . ', ';
+    //$result=$cb->get($aRow->fk_soc);
+    //$result=  json_decode($result);
+    
+    //print $aRow->fk_soc;
+    if(!empty($col[$aRow->fk_soc]->rowid)){
         //print $aRow->fk_soc;
         //var_dump($result);exit;
-        $result=  json_decode($result);
-        $result->commerciaux[]=$aRow->login;
+        $col[$aRow->fk_soc]->commerciaux[]=$aRow->login;
         
         //print_r($result);exit;
-        $cb->set($aRow->fk_soc,  json_encode($result));
+        
+        //$cb->set($aRow->fk_soc,  json_encode($result));
         //exit;
     }
     //$cb->set($aRow->fk_soc);
 }
+$db->free($resultCommerciaux);
+unset($resultCommerciaux);
+
+/* sql query get categories */
+$sql = " SELECT fk_societe,label FROM (llx_categorie_societe as cs,llx_categorie as c) 
+where "/*cs.fk_societe in ($companies) and*/ ."cs.fk_categorie=c.rowid";
+//$sql .= " LIMIT 100";
+$resultCate = $db->query($sql);
+
+
 /* init society categories array */
 while ($aRow = $db->fetch_object($resultCate)) {
-    $categoriesDeChaqueSociete[$aRow->fk_societe] = $categoriesDeChaqueSociete[$aRow->fk_societe] . $aRow->label . ', ';
-    $result=$cb->get($aRow->fk_societe);
-    //
-    if($result){
+    //$categoriesDeChaqueSociete[$aRow->fk_societe] = $categoriesDeChaqueSociete[$aRow->fk_societe] . $aRow->label . ', ';
+    
+    //print $aRow->fk_soc;
+    if(!empty($col[$aRow->fk_soc]->rowid)){
         //print $aRow->fk_soc;
         //var_dump($result);exit;
-        $result=  json_decode($result);
-        $result->category[]=$aRow->label;
+        $col[$aRow->fk_soc]->category[]=$aRow->label;
         //print_r($result);exit;
-        $cb->set($aRow->fk_societe,  json_encode($result));
+        //$cb->set($aRow->fk_societe,  json_encode($result));
         //exit;
     }
 }
+$db->free($resultCate);
+unset($resultCate);
 
-/* output data */
-if ($col != null) {
+$i=0;
 
-    foreach ($col as $aRow) {
-        $row = array();
-        for ($i = 0; $i < count($aColumns); $i++) {
-
-            if ($aColumns[$i] == "company") {
-                $prospectstatic->id = $aRow->rowid;
-                $prospectstatic->nom = $aRow->nom;
-                $prospectstatic->status = $aRow->status;
-                if ($aRow->type == 2)
-                    $row[] = $prospectstatic->getNomUrl(1, 'customer');
-                else
-                    $row[] = $prospectstatic->getNomUrl(1, 'prospect');
-            }
-            else if ($aColumns[$i] == "categorie") {
-                $row[] = $categoriesDeChaqueSociete[$aRow->rowid];
-            } else if ($aColumns[$i] == "sale") {
-                $row[] = $commerciauxDeChaqueSociete[$aRow->rowid];
-            } else if ($aColumns[$i] == "datec") {
-                $row[] = dol_print_date($db->jdate($aRow->datec));
-            } else if ($aColumns[$i] == "etat") {
-                $prospectstatic->stcomm_id = $aRow->fk_stcomm;
-                $prospectstatic->type = $aRow->type;
-                $row[] = $prospectstatic->getIconList(DOL_URL_ROOT . "/comm/list.php?socid=" . $aRow->rowid . $param . '&lang=' . $langs->defaultlang . '&type=' . $type . '&action=cstc&amp;' . ($page ? '&amp;page=' . $page : ''));
-            } else if ($aColumns[$i] == "fk_prospectlevel") { // Level
-                $row[] = $prospectstatic->LibLevel($aRow->fk_prospectlevel);
-            } else if ($aColumns[$i] == "fk_stcomm") { //status
-                $row[] = $prospectstatic->LibProspStatut($aRow->fk_stcomm, 2);
-            } else if ($i == 0) { //first
-                $row[] = '<img id="' . $aRow->rowid . '" class="plus" src="../theme/cameleo/img/details_open.png">';
-            } else if ($i == (count($aColumns) - 1)) { //last
-                $row[] = $prospectstatic->getLibStatut(3);
-            } else if ($aColumns[$i] != ' ') {
-                /* General output */
-                $attribut = $aColumns[$i];
-                $row[] = $aRow->$attribut;
-            }
-        }
-        $output['aaData'][] = $row;
+foreach ($col as $aRow)
+{
+    try {
+        $couch->storeDocs($col,false);
+        //$cb->set($uuid[$i],  json_encode($aRow));
+    } catch (Exception $e) {
+        echo "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+        exit(1);
     }
+    $i++;
 }
 
-$db->free($resultCate);
-$db->free($resultCommerciaux);
-$db->free($resultSocietes);
-$db->free($resultTotal);
-header('Content-type: application/json');
-echo json_encode($output);
 ?>

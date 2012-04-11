@@ -222,8 +222,7 @@ class pdf_azur extends ModelePDFPropales
 					$tab_top = 88;
 
 					$pdf->SetFont('','', $default_font_size - 1);   // Dans boucle pour gerer multi-page
-					$pdf->SetXY($this->posxdesc-1, $tab_top);
-					$pdf->MultiCell(190, 4, $outputlangs->convToOutputCharset($object->note_public), 0, 'L');
+					$pdf->writeHTMLCell(190, 4, $this->posxdesc-1, $tab_top, $outputlangs->convToOutputCharset($object->note_public), 0, 1);
 					$nexY = $pdf->GetY();
 					$height_note=$nexY-$tab_top;
 
@@ -924,7 +923,8 @@ class pdf_azur extends ModelePDFPropales
 		{
 			if (is_readable($logo))
 			{
-				$pdf->Image($logo, $this->marge_gauche, $posy, 0, 22);	// width=0 (auto), max height=22
+			    $height=pdf_getHeightForLogo($logo);
+			    $pdf->Image($logo, $this->marge_gauche, $posy, 0, $height);	// width=0 (auto)
 			}
 			else
 			{
@@ -985,7 +985,7 @@ class pdf_azur extends ModelePDFPropales
 		$posy+=2;
 
 		// Show list of linked objects
-		$posy = pdf_writeLinkedObjects($pdf, $object, $outputlangs, $posx, $posy, 'R', $default_font_size, $hookmanager);
+		$posy = pdf_writeLinkedObjects($pdf, $object, $outputlangs, $posx, $posy, 100, 3, 'R', $default_font_size, $hookmanager);
 
 		if ($showaddress)
 		{
