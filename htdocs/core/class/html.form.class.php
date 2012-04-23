@@ -105,7 +105,7 @@ class Form
             $ret.='<table class="nobordernopadding" width="100%"><tr><td nowrap="nowrap">';
             $ret.=$langs->trans($text);
             $ret.='</td>';
-            if (GETPOST('action') != 'edit'.$htmlname && $perm) $ret.='<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=edit'.$htmlname.'&amp;id='.$object->id.$moreparam.'">'.img_edit($langs->trans('Edit'),1).'</a></td>';
+            if (GETPOST('action') != 'edit'.$htmlname && $perm) $ret.='<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=edit'.$htmlname.'&amp;id='.(isset($object->id)?$object->id:$object->id()).$moreparam.'">'.img_edit($langs->trans('Edit'),1).'</a></td>';
             $ret.='</tr></table>';
         }
 
@@ -147,7 +147,7 @@ class Form
                 $ret.='<form method="post" action="'.$_SERVER["PHP_SELF"].($moreparam?'?'.$moreparam:'').'">';
                 $ret.='<input type="hidden" name="action" value="set'.$htmlname.'">';
                 $ret.='<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
-                $ret.='<input type="hidden" name="id" value="'.$object->id.'">';
+                $ret.='<input type="hidden" name="id" value="'.(isset($object->id)?$object->id:$object->id()).'">';
                 $ret.='<table class="nobordernopadding" cellpadding="0" cellspacing="0">';
                 $ret.='<tr><td>';
                 if (preg_match('/^(string|email|numeric)/',$typeofdata))
@@ -162,7 +162,7 @@ class Form
                 }
                 else if ($typeofdata == 'day' || $typeofdata == 'datepicker')
                 {
-                    $ret.=$this->form_date($_SERVER['PHP_SELF'].'?id='.$object->id,$value,$htmlname);
+                    $ret.=$this->form_date($_SERVER['PHP_SELF'].'?id='.(isset($object->id)?$object->id:$object->id()),$value,$htmlname);
                 }
                 else if (preg_match('/^select;/',$typeofdata))
                 {
@@ -189,8 +189,8 @@ class Form
             else
             {
                 if ($typeofdata == 'email')   $ret.=dol_print_email($value,0,0,0,0,1);
+                elseif (preg_match('/^text/',$typeofdata) || preg_match('/^note/',$typeofdata))  $ret.=dol_htmlentitiesbr($value);
                 elseif ($typeofdata == 'day' || $typeofdata == 'datepicker') $ret.=dol_print_date($value,'day');
-                elseif ($typeofdata == 'text' || $typeofdata == 'textarea')  $ret.=dol_htmlentitiesbr($value);
                 else if (preg_match('/^select;/',$typeofdata))
                 {
                     $arraydata=explode(',',preg_replace('/^select;/','',$typeofdata));
@@ -256,7 +256,7 @@ class Form
             {
                 $element = $object->element;
                 $table_element = $object->table_element;
-                $fk_element = $object->id;
+                $fk_element = $object->id();
             }
 
             if (is_object($extObject))
@@ -495,11 +495,11 @@ class Form
                     if ($selected && $selected != '-1' && ($selected == $row['rowid'] || $selected == $row['code_iso'] || $selected == $row['label']) )
                     {
                         $foundselected=true;
-                        $out.= '<option value="'.$row['rowid'].'" selected="selected">';
+                        $out.= '<option value="'.$row['code_iso'].'" selected="selected">';
                     }
                     else
                     {
-                        $out.= '<option value="'.$row['rowid'].'">';
+                        $out.= '<option value="'.$row['code_iso'].'">';
                     }
                     $out.= $row['label'];
                     if ($row['code_iso']) $out.= ' ('.$row['code_iso'] . ')';
@@ -2886,6 +2886,8 @@ class Form
      */
     function load_cache_vatrates($country_code)
     {
+    	global $langs;
+
     	if (count($this->cache_vatrates)) return 0;    // Cache deja charge
 
     	$sql  = "SELECT DISTINCT t.taux, t.recuperableonly";
@@ -3389,7 +3391,7 @@ class Form
     function selectarray($htmlname, $array, $id='', $show_empty=0, $key_in_label=0, $value_as_key=0, $option='', $translate=0, $maxlen=0, $disabled=0)
     {
         global $langs;
-        
+
         if ($value_as_key) $array=array_combine($array, $array);
 
         $out='<select id="'.$htmlname.'" '.($disabled?'disabled="disabled" ':'').'class="flat" name="'.$htmlname.'" '.($option != ''?$option:'').'>';
@@ -3411,7 +3413,7 @@ class Form
                 }
 
                 $out.='>';
-                
+
                 $newval=($translate?$langs->trans(ucfirst($value)):$value);
                 if ($key_in_label)
                 {
@@ -3432,7 +3434,7 @@ class Form
         $out.="</select>";
         return $out;
     }
-    
+
     /**
      *	Show a multiselect form from an array.
      *
@@ -3472,7 +3474,7 @@ class Form
     					}
     				}
     			}
-    			
+
     			if (! empty($array))
     			{
     				foreach ($array as $key => $value)
@@ -3495,7 +3497,7 @@ class Form
     					$out.= ' selected="selected"';
     				}
     				$out.= '>';
-    				 
+
     				$newval = ($translate ? $langs->trans(ucfirst($value)) : $value);
     				$newval = ($key_in_label ? $key.' - '.$newval : $newval);
     				$out.= dol_htmlentitiesbr($newval);
@@ -3504,7 +3506,7 @@ class Form
     		}
     	}
     	$out.= '</select>'."\n";
-    
+
     	return $out;
     }
 

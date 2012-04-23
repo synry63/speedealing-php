@@ -2193,8 +2193,7 @@ tr.even a{
 font-family:arial,tahoma,verdana,helvetica;
 }
 
- /* DataTables sorting */
- 
+
 .sorting {
 	background: url(<?php echo DOL_URL_ROOT.'/theme/cameleo/img/sort_both.png'?>) no-repeat center right;
 }

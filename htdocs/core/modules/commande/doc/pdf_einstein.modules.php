@@ -235,7 +235,7 @@ class pdf_einstein extends ModelePDFCommandes
 					$tab_top = 88;
 
 					$pdf->SetFont('','', $default_font_size - 1);   // Into loop to manage multipages
-					$pdf->writeHTMLCell(190, 3, $this->posxdesc-1, $tab_top, $outputlangs->convToOutputCharset($object->note_public), 0, 1);
+					$pdf->writeHTMLCell(190, 3, $this->posxdesc-1, $tab_top, dol_htmlentitiesbr($object->note_public), 0, 1);
 					$nexY = $pdf->GetY();
 					$height_note=$nexY-$tab_top;
 
@@ -309,7 +309,7 @@ class pdf_einstein extends ModelePDFCommandes
 					if ($object->remise_percent) $tvaligne-=($tvaligne*$object->remise_percent)/100;
 					if ($object->remise_percent) $localtax1ligne-=($localtax1ligne*$object->remise_percent)/100;
 					if ($object->remise_percent) $localtax2ligne-=($localtax2ligne*$object->remise_percent)/100;
-					
+
 					$vatrate=(string) $object->lines[$i]->tva_tx;
 					$localtax1rate=(string) $object->lines[$i]->localtax1_tx;
 					$localtax2rate=(string) $object->lines[$i]->localtax2_tx;
@@ -350,7 +350,7 @@ class pdf_einstein extends ModelePDFCommandes
 						$tab_top_in_current_page=$tab_top_newpage;
 						$tab_height_in_current_page=$tab_height_newpage;
 					}
-					if (($nexY+$nblineFollowDesc) > ($tab_top_in_current_page+$tab_height_in_current_page) && $i < ($nblignes - 1))
+					if ((($nexY+$nblineFollowDesc) > ($tab_top_in_current_page+$tab_height_in_current_page) && $i < ($nblignes - 1)) || (isset($object->lines[$i+1]->pagebreak) && $object->lines[$i+1]->pagebreak))
 					{
 						if ($pagenb == 1)
 						{

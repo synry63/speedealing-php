@@ -22,7 +22,7 @@
  * 	\brief      load data to display
  * 	\version    $Id: serverprocess.php,v 1.6 2012/01/27 16:15:05 synry63 Exp $
  */
-require_once("../main.inc.php");
+require_once("../../main.inc.php");
 require_once(DOL_DOCUMENT_ROOT . "/comm/prospect/class/prospect.class.php");
 require_once(DOL_DOCUMENT_ROOT . "/core/class/html.formother.class.php");
 $langs->load("companies");
@@ -186,6 +186,40 @@ if ($_GET['sSearch_13'] != "") {
 if (!$user->rights->societe->client->voir && !$socid) {
     $search_sale = $user->id;
 }
+
+$flush=0;
+if($flush)
+{
+    // reset old value
+    $result = $couch->limit(50000)->getView('societe','target_id');
+    $i=0;
+    
+    if(count($result->rows)==0)
+    {
+        print "Effacement terminé";
+        exit;
+    }
+    
+    foreach ($result->rows AS $aRow)
+    {
+        $obj[$i]->_id=$aRow->value->_id;
+        $obj[$i]->_rev=$aRow->value->_rev;
+        $i++;
+    }
+
+    try {
+        $couch->deleteDocs($obj);
+    } catch (Exception $e) {
+        echo "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+        exit(1);
+    }
+
+    print "Effacement en cours";
+    exit;
+}
+
+
+
 /*basic companies request query */
 $sql = "SELECT s.rowid, s.nom, s.ville, s.datec, s.datea, s.status as status,";
 $sql.= " st.libelle as stcomm, s.prefix_comm, s.fk_stcomm, s.fk_prospectlevel,st.type,";
@@ -243,7 +277,7 @@ if($search_sale || $_GET['sSearch_7']!=""){
 $sql.= $sOrder;
 $sql.= $sLimit;
 $resultSocietes = $db->query($sql);
-exit;
+
 //$cb = new couchClient("http://193.169.46.49:5984/","dolibarr");
 //$cb = new Couchbase;
 //$cb->default_bucket_name="dolibarr";
@@ -254,6 +288,7 @@ exit;
 //$uuid=$cb->uuid($iTotal); //generation des uuids
 
 /*get companies. usefull to get their sales and categories */
+
 $i=0;
 
 while ($aRow = $db->fetch_object($resultSocietes)) {
@@ -321,7 +356,6 @@ $resultCate = $db->query($sql);
 
 /* init society categories array */
 while ($aRow = $db->fetch_object($resultCate)) {
-    //$categoriesDeChaqueSociete[$aRow->fk_societe] = $categoriesDeChaqueSociete[$aRow->fk_societe] . $aRow->label . ', ';
     
     //print $aRow->fk_soc;
     if(!empty($col[$aRow->fk_soc]->rowid)){
@@ -329,8 +363,6 @@ while ($aRow = $db->fetch_object($resultCate)) {
         //var_dump($result);exit;
         $col[$aRow->fk_soc]->category[]=$aRow->label;
         //print_r($result);exit;
-        //$cb->set($aRow->fk_societe,  json_encode($result));
-        //exit;
     }
 }
 $db->free($resultCate);
@@ -338,16 +370,10 @@ unset($resultCate);
 
 $i=0;
 
-foreach ($col as $aRow)
-{
-    try {
-        $couch->storeDocs($col,false);
-        //$cb->set($uuid[$i],  json_encode($aRow));
+try {
+    $couch->storeDocs($col,false);
     } catch (Exception $e) {
         echo "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
         exit(1);
     }
-    $i++;
-}
-
 ?>

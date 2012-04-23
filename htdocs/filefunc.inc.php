@@ -29,7 +29,7 @@
  *  \brief      File that include conf.php file and commons lib like functions.lib.php
  */
 
-if (! defined('DOL_VERSION')) define('DOL_VERSION','3.3.0-alpha');	// Also defined in htdocs/install/inc.php (Ex: x.y.z-alpha, x.y.z)
+if (! defined('DOL_VERSION')) define('DOL_VERSION','3.2.0-beta');	// Also defined in htdocs/install/inc.php (Ex: x.y.z-alpha, x.y.z)
 if (! defined('EURO')) define('EURO',chr(128));
 
 // Define syslog constants
@@ -74,6 +74,12 @@ if (! $result && ! empty($_SERVER["GATEWAY_INTERFACE"]))    // If install not do
 {
 	header("Location: install/index.php");
 	exit;
+}
+
+// Disable php display errors
+if (! empty($dolibarr_main_prod))
+{
+	ini_set('display_errors','Off');
 }
 
 // Clean parameters
@@ -228,9 +234,7 @@ include_once(DOL_DOCUMENT_ROOT ."/core/lib/functions.lib.php");
 include_once(DOL_DOCUMENT_ROOT ."/core/lib/security.lib.php");
 //print memory_get_usage();
 
-include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couch.php");
-include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couchClient.php");
-include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couchDocument.php");
+include_once(DOL_DOCUMENT_ROOT ."/core/db/Couchdb/couchDolibarr.php");
 
 $couch = new couchClient("http://couch.symeos.com:5984/","demo");
 
