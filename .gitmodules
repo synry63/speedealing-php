@@ -1,12 +1,3 @@
-[submodule "htdocs/custom/lead"]
-	path = htdocs/custom/lead
-	url = git@git.symeos.com:module-lead.git
-[submodule "htdocs/custom/mailjet"]
-        path = htdocs/custom/mailjet
-        url = git@git.symeos.com:module-mailjet.git
-[submodule "htdocs/custom/stock"]
-        path = htdocs/custom/stock
-        url = git@git.symeos.com:module-stock.git
-[submodule "htdocs/custom/ego"]
-        path = htdocs/custom/ego
-        url = git@git.symeos.com:module-ego.git
+[submodule "htdocs/core/db/couchdb"]
+	path = htdocs/core/db/couchdb
+	url = git@github.com:speedealing/PHP-on-Couch.git
