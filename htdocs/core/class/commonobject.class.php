@@ -2765,7 +2765,6 @@ abstract class CommonObject extends couchDocument
 	public function _datatables($obj,$ref_css)
 	{
             global $conf,$langs;
-            
             $obj->sAjaxSource = $_SERVER['PHP_SELF']."?json=true";
             $obj->iDisplayLength = (int)$conf->global->MAIN_SIZE_LISTE_LIMIT;
             $obj->aLengthMenu= array(array(10, 25, 50, 100, 1000, -1), array(10, 25, 50, 100,1000,"All"));
@@ -2775,8 +2774,8 @@ abstract class CommonObject extends couchDocument
             $obj->oLanguage->sUrl = DOL_URL_ROOT.'/core/datatables/langs/'.($langs->defaultlang?$langs->defaultlang:"en_US").".txt";
             $obj->sDom = '<\"top\"Tflpi<\"clear\">>rt<\"bottom\"pi<\"clear\">>';
             $obj->oTableTools->sSwfPath = DOL_URL_ROOT.'/core/datatables/swf/copy_cvs_xls_pdf.swf';
-            $obj->oTableTools->aButtons = array("xls");
-            
+            if($obj->oTableTools->aButtons==null)
+                $obj->oTableTools->aButtons = array("xls");
             $output ='<script type="text/javascript" charset="utf-8">';
             $output.='$(document).ready(function() {';
             $output.='oTable = $(\''.$ref_css.'\').dataTable(';

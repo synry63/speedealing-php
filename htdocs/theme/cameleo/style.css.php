@@ -2406,10 +2406,10 @@ margin:5px;
 width:300px;
 height:50px;
 }
-input.entrepot{
+input.codemouv{
 vertical-align: top;
 margin-top:5px;
-width:50px;
+width:60px;
 }
 input.submit{
 width:80px;
