@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2004      Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2005-2011 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2012	   Florian Henry  <florian.henry@open-concept.pro>
@@ -20,7 +20,7 @@
 
 
 /**
- *      \file       scripts/emailings/mailing-unsubscribe.php
+ *      \file       public/emailing/mailing-unsubscribe.php
  *      \ingroup    mailing
  *      \brief      Script use to update unsubcribe contact to prospect mailing list
  */
@@ -39,7 +39,7 @@ $langs->load("mails");
 $id=GETPOST('tag');
 $unsuscrib=GETPOST('unsuscrib');
 
-if (empty($conf->global->MAIN_SOCIETE_UNSUBSCRIBE)) accessforbidden('Option not enabled');
+if (empty($conf->global->MAILING_EMAIL_UNSUBSCRIBE)) accessforbidden('Option not enabled');
 
 
 /*

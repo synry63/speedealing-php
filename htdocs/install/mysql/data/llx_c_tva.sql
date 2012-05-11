@@ -7,6 +7,7 @@
 -- Copyright (C) 2007 	   Patrick Raguin       <patrick.raguin@gmail.com>
 -- Copyright (C) 2010-2011 Juanjo Menent        <jmenent@2byte.es>
 -- Copyright (C) 2012      Sebastian Neuwert    <sebastian.neuwert@modula71.de>
+-- Copyright (C) 2012	   Ricardo Schluter		<info@ripasch.nl>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -124,6 +125,15 @@ insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (14
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (1404, 140,  '3','0','VAT super-reduced rate', 1);
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (1405, 140,  '0','0','VAT Rate 0', 1);
 
+-- MONACO (id country=27)
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 271,  27,'19.6','0','VAT standard rate (France hors DOM-TOM)',1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 272,  27, '8.5','0','VAT standard rate (DOM sauf Guyane et Saint-Martin)',0);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 273,  27, '8.5','1','VAT standard rate (DOM sauf Guyane et Saint-Martin), non perçu par le vendeur mais récupérable par acheteur',0);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 274,  27, '5.5','0','VAT reduced rate (France hors DOM-TOM)',0);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 275,  27,   '0','0','VAT Rate 0 ou non applicable',1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 276,  27, '2.1','0','VAT super-reduced rate',1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values ( 277,  27,   '7','0','VAT reduced rate',1);
+
 -- MAROCO (id country=12)
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (121,  12, '20','0','VAT standard rate',1);
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (122,  12, '14','0','VAT reduced rate',1);
@@ -132,9 +142,10 @@ insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (12
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (125,  12,  '0','0','VAT Rate 0', 1);
 
 -- NEDERLAND (id country=17)
-insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (171, 17,  '19','0','VAT standard rate',1);
-insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (172, 17,   '6','0','VAT reduced rate', 1);
-insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (173, 17,   '0','0','VAT Rate 0', 1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (171, 17,  '19','0','Algemeen BTW tarief',1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (172, 17,   '6','0','Verlaagd BTW tarief', 1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (173, 17,   '0','0','0 BTW tarief', 1);
+insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (174, 17,  '21','0','Algemeen BTW tarief (vanaf 1 oktober 2012)',0);
 
 -- NEW ZEALAND (id country=166)
 insert into llx_c_tva(rowid,fk_pays,taux,recuperableonly,note,active) values (1662, 166,  '15','0','VAT standard rate', 1);

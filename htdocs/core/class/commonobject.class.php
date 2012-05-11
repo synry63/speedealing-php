@@ -2,7 +2,8 @@
 /* Copyright (C) 2006-2012 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2012 Regis Houssin        <regis@dolibarr.fr>
  * Copyright (C) 2010-2011 Juanjo Menent        <jmenent@2byte.es>
- * Copyright (C) 2012      Christophe Battarel   <christophe.battarel@altairis.fr>
+ * Copyright (C) 2012      Christophe Battarel  <christophe.battarel@altairis.fr>
+ * Copyright (C) 2011-2012 Philippe Grand	    <philippe.grand@atoo-net.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +25,8 @@
  *	\brief      File of parent class of all other business classes (invoices, contracts, proposals, orders, ...)
  */
 
+require_once(DOL_DOCUMENT_ROOT.'/core/db/couchdb/lib/couchDocument.php');
+
 
 /**
  *	Parent class of all other business classes (invoices, contracts, proposals, orders, ...)
@@ -31,16 +34,10 @@
 abstract class CommonObject extends couchDocument
 {
     protected $db;
+    protected $couchdb;
     public $error;
     public $errors;
     public $canvas;                // Contains canvas name if it is
-    
-    var $arrayjs = array("/core/datatables/js/jquery.dataTables.js",
-            "/core/datatables/js/TableTools.js",
-            "/core/datatables/js/ZeroClipboard.js",
-            "/core/datatables/js/initXHR.js",
-            "/core/datatables/js/request.js",
-            "/core/datatables/js/searchColumns.js");
 
 
        /**
@@ -50,12 +47,15 @@ abstract class CommonObject extends couchDocument
 	*
 	*/
     
-        function __construct(couchClient $db)
+        function __construct($db)
 	{
-                parent::__construct($db);
-                $this->setAutocommit(false);
-                $this->class = $this->element;
-		$this->db = $db;
+            global $conf;
+            
+            parent::__construct($conf->couchdb);
+            $this->setAutocommit(false);
+            $this->class = $this->element;
+            $this->db = $db;
+	    $this->couchdb = $conf->couchdb;
 	}
         
         /**
@@ -65,17 +65,13 @@ abstract class CommonObject extends couchDocument
 	 */
 	public function record()
 	{
-            foreach ($this->__couch_data->fields as $key => $aRow)
-            {
-                if(empty($aRow))
-                {
-                    unset($this->__couch_data->fields->$key);
-                }
-                else
-                    trim($aRow);
-                    
-            }
-            return parent::record();
+		foreach ($this->__couch_data->fields as $key => $aRow)
+		{
+			if (empty($aRow)) unset($this->__couch_data->fields->$key);
+			//else trim($aRow); // TODO problem with array value
+		}
+		
+		return parent::record();
 	}
 
 
@@ -587,7 +583,7 @@ abstract class CommonObject extends couchDocument
         if ($conf->global->PRODUIT_MULTIPRICES && empty($this->thirdparty->price_level))
         {
             $this->client->price_level=1; // deprecated
-            $this->thirdparty->price_level=1;
+            $this->thirdparty->PriceLevel=1;
         }
 
         return $result;
@@ -1886,8 +1882,11 @@ abstract class CommonObject extends couchDocument
 
         $this->db->begin();
 
+        $fieldstatus="fk_statut";
+        if ($elementTable == 'user') $fieldstatus="statut";
+
         $sql = "UPDATE ".MAIN_DB_PREFIX.$elementTable;
-        $sql.= " SET fk_statut = ".$status;
+        $sql.= " SET ".$fieldstatus." = ".$status;
         $sql.= " WHERE rowid=".$elementId;
 
         dol_syslog(get_class($this)."::setStatut sql=".$sql, LOG_DEBUG);
@@ -2351,7 +2350,7 @@ abstract class CommonObject extends couchDocument
      */
     function showLinkedObjectBlock()
     {
-        global $langs,$bc;
+        global $conf,$langs,$bc;
 
         $this->fetchObjectLinked();
 
@@ -2391,7 +2390,13 @@ abstract class CommonObject extends couchDocument
             global $linkedObjectBlock;
             $linkedObjectBlock = $objects;
 
-            dol_include_once('/'.$tplpath.'/tpl/linkedobjectblock.tpl.php');
+            // Output template part (modules that overwrite templates must declare this into descriptor)
+            $dirtpls=array_merge($conf->modules_parts['tpl'],array('/'.$tplpath.'/tpl'));
+            foreach($dirtpls as $reldir)
+            {
+                $res=@include(dol_buildpath($reldir.'/linkedobjectblock.tpl.php'));
+                if ($res) break;
+            }
         }
 
         return $num;
@@ -2417,8 +2422,14 @@ abstract class CommonObject extends couchDocument
 		global $conf,$langs,$object;
 		global $form,$bcnd,$var;
 
+		// Output template part (modules that overwrite templates must declare this into descriptor)
         // Use global variables + $dateSelector + $seller and $buyer
-        include(DOL_DOCUMENT_ROOT.'/core/tpl/predefinedproductline_create.tpl.php');
+		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+		foreach($dirtpls as $reldir)
+		{
+		    $res=@include(dol_buildpath($reldir.'/predefinedproductline_create.tpl.php'));
+		    if ($res) break;
+		}
     }
 
     /**
@@ -2437,8 +2448,14 @@ abstract class CommonObject extends couchDocument
 		global $conf,$langs,$object;
 		global $form,$bcnd,$var;
 
+		// Output template part (modules that overwrite templates must declare this into descriptor)
         // Use global variables + $dateSelector + $seller and $buyer
-        include(DOL_DOCUMENT_ROOT.'/core/tpl/freeproductline_create.tpl.php');
+		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+		foreach($dirtpls as $reldir)
+		{
+		    $res=@include(dol_buildpath($reldir.'/freeproductline_create.tpl.php'));
+		    if ($res) break;
+		}
     }
 
 
@@ -2576,13 +2593,25 @@ abstract class CommonObject extends couchDocument
 				$text.= ' - '.$label;
 				$description=($conf->global->PRODUIT_DESC_IN_FORM?'':dol_htmlentitiesbr($line->description));
 
-				// Use global variables + $seller and $buyer
-				include(DOL_DOCUMENT_ROOT.'/core/tpl/predefinedproductline_view.tpl.php');
+				// Output template part (modules that overwrite templates must declare this into descriptor)
+                // Use global variables + $dateSelector + $seller and $buyer
+        		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+        		foreach($dirtpls as $reldir)
+        		{
+        		    $res=@include(dol_buildpath($reldir.'/predefinedproductline_view.tpl.php'));
+        		    if ($res) break;
+        		}
 			}
 			else
 			{
-				// Use global variables + $dateSelector + $seller and $buyer
-				include(DOL_DOCUMENT_ROOT.'/core/tpl/freeproductline_view.tpl.php');
+				// Output template part (modules that overwrite templates must declare this into descriptor)
+                // Use global variables + $dateSelector + $seller and $buyer
+        		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+        		foreach($dirtpls as $reldir)
+        		{
+        		    $res=@include(dol_buildpath($reldir.'/freeproductline_view.tpl.php'));
+        		    if ($res) break;
+        		}
 			}
 		}
 
@@ -2591,13 +2620,25 @@ abstract class CommonObject extends couchDocument
 		{
 			if ($line->fk_product > 0)
 			{
-				// Use global variables + $dateSelector + $seller and $buyer
-				include(DOL_DOCUMENT_ROOT.'/core/tpl/predefinedproductline_edit.tpl.php');
+				// Output template part (modules that overwrite templates must declare this into descriptor)
+                // Use global variables + $dateSelector + $seller and $buyer
+        		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+        		foreach($dirtpls as $reldir)
+        		{
+        		    $res=@include(dol_buildpath($reldir.'/predefinedproductline_edit.tpl.php'));
+        		    if ($res) break;
+        		}
 			}
 			else
 			{
-				// Use global variables + $dateSelector + $seller and $buyer
-				include(DOL_DOCUMENT_ROOT.'/core/tpl/freeproductline_edit.tpl.php');
+				// Output template part (modules that overwrite templates must declare this into descriptor)
+                // Use global variables + $dateSelector + $seller and $buyer
+        		$dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+        		foreach($dirtpls as $reldir)
+        		{
+        		    $res=@include(dol_buildpath($reldir.'/freeproductline_edit.tpl.php'));
+        		    if ($res) break;
+        		}
 			}
 		}
 	}
@@ -2665,7 +2706,7 @@ abstract class CommonObject extends couchDocument
      */
     function printOriginLine($line,$var)
     {
-        global $langs,$bc;
+        global $conf,$langs,$bc;
 
         //var_dump($line);
 
@@ -2737,7 +2778,14 @@ abstract class CommonObject extends couchDocument
         $this->tpl['qty'] = (($line->info_bits & 2) != 2) ? $line->qty : '&nbsp;';
         $this->tpl['remise_percent'] = (($line->info_bits & 2) != 2) ? vatrate($line->remise_percent, true) : '&nbsp;';
 
-        include(DOL_DOCUMENT_ROOT.'/core/tpl/originproductline.tpl.php');
+        // Output template part (modules that overwrite templates must declare this into descriptor)
+        // Use global variables + $dateSelector + $seller and $buyer
+        $dirtpls=array_merge($conf->modules_parts['tpl'],array('/core/tpl'));
+        foreach($dirtpls as $reldir)
+        {
+            $res=@include(dol_buildpath($reldir.'/originproductline.tpl.php'));
+            if ($res) break;
+        }
     }
     
         /**
@@ -2747,11 +2795,11 @@ abstract class CommonObject extends couchDocument
 	 *  @return array         		1 success
 	 */
         
-        public function getView($name)
+        public function getView($view,$name)
         {
             global $conf;
             
-            return $this->db->limit($conf->liste_limit)->getView($this->class,$name);
+            return $conf->couchdb->limit($conf->liste_limit)->getView($view,$name);
         }
     
     
@@ -2762,23 +2810,63 @@ abstract class CommonObject extends couchDocument
          *  @param $ref_css name of #list
 	 *  @return string
 	 */
-	public function _datatables($obj,$ref_css)
+	public function _datatables($obj,$ref_css,$json=false, $ColSearch=false)
 	{
             global $conf,$langs;
-            $obj->sAjaxSource = $_SERVER['PHP_SELF']."?json=true";
+
+            
+            if(!isset($obj->aaSorting) && $json)
+                $obj->aaSorting = array(array(1, "asc"));
+            
+            if($json)
+                $obj->sAjaxSource = $_SERVER['PHP_SELF']."?json=list";
+            
+
             $obj->iDisplayLength = (int)$conf->global->MAIN_SIZE_LISTE_LIMIT;
             $obj->aLengthMenu= array(array(10, 25, 50, 100, 1000, -1), array(10, 25, 50, 100,1000,"All"));
             $obj->bProcessing = true;
             $obj->bJQueryUI = true;
+            $obj->bAutoWidth = false;
+            //$obj->bServerSide = true;
             $obj->bDeferRender = true;
-            $obj->oLanguage->sUrl = DOL_URL_ROOT.'/core/datatables/langs/'.($langs->defaultlang?$langs->defaultlang:"en_US").".txt";
-            $obj->sDom = '<\"top\"Tflpi<\"clear\">>rt<\"bottom\"pi<\"clear\">>';
-            $obj->oTableTools->sSwfPath = DOL_URL_ROOT.'/core/datatables/swf/copy_cvs_xls_pdf.swf';
-            if($obj->oTableTools->aButtons==null)
-                $obj->oTableTools->aButtons = array("xls");
+            $obj->oLanguage->sUrl = DOL_URL_ROOT.'/includes/jquery/plugins/datatables/langs/'.($langs->defaultlang?$langs->defaultlang:"en_US").".txt";
+            //$obj->sDom = '<\"top\"Tflpi<\"clear\">>rt<\"bottom\"pi<\"clear\">>';
+            //$obj->sPaginationType = 'full_numbers';
+            //$obj->sDom = 'TC<\"clear\">lfrtip';
+            $obj->oTableTools->sSwfPath = DOL_URL_ROOT.'/includes/jquery/plugins/datatables/extras/TableTools/media/swf/copy_csv_xls.swf';
+	    if($obj->oTableTools->aButtons==null)
+		$obj->oTableTools->aButtons = array("xls");
+            $obj->oColVis->buttonText = 'Voir/Cacher';
+            if($json)
+                $obj->oColVis->aiExclude = array(0,1); // Not cacheable
+            else
+                $obj->oColVis->aiExclude = array(0); // Not cacheable
+            //$obj->oColVis->bRestore = true;
+            //$obj->oColVis->sAlign = 'left';
+            
+            // Avec export Excel
+            $obj->sDom = 'TC<fr>t<\"clear\"lrtip>';
+            // Sans export
+            //$obj->sDom = 'Cl<fr>t<\"clear\"rtip>';
+            
+            // jeditable
+            $obj->fnDrawCallback= '%function () {
+            $("#'.$ref_css.' tbody td.edit").editable( "'.$_SERVER['PHP_SELF'].'?json=edit", {
+                "callback": function( sValue, y ) {
+                    oTable.fnDraw();
+                },
+                "height": "14px",
+                "tooltip": "Cliquer pour éditer...",
+                "indicator" : "<div style=\"text-align: center;\"><img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/working.gif\" border=\"0\" alt=\"Saving...\" title=\"Enregistrement en cours\" /></div>",
+                "placeholder" : ""
+                
+            } );
+            }%';
+
+            
             $output ='<script type="text/javascript" charset="utf-8">';
             $output.='$(document).ready(function() {';
-            $output.='oTable = $(\''.$ref_css.'\').dataTable(';
+            $output.='oTable = $(\'#'.$ref_css.'\').dataTable(';
             
             $json = json_encode($obj);
             $json = str_replace('"%', '', $json);
@@ -2787,15 +2875,64 @@ abstract class CommonObject extends couchDocument
             $json = str_replace('\r', '', $json);
             $json = str_replace('\"', '"', $json);
             $json = str_replace('\"', '"', $json);
-            $json = str_replace('$', '"', $json);
             $output.=$json;
             
             $output.= ");";
+            //$output.= "});"; // ATTENTION AUTOFILL NOT COMPATIBLE WITH COLVIS !!!!
+            /*$output.= 'new AutoFill( oTable, {
+		"aoColumnDefs": [
+                {
+                        "bEnable":false,
+                        "aTargets": [ 0,1,2,3,5,6,8]
+                },
+                {
+			"fnCallback": function ( ao ) {
+				var n = document.getElementById(\'output\');
+				for ( var i=0, iLen=ao.length ; i<iLen ; i++ ) {
+					n.innerHTML += "Update: old value: {"+
+						ao[i].oldValue+"} - new value: {"+ao[i].newValue+"}<br>";
+				}
+				n.scrollTop = n.scrollHeight;
+			},
+                        "bEnable" : true,
+			"aTargets": [ 4,7 ]
+		}]
+            } );';*/
             $output.= "});";
+            $output.='</script>'."\n";
+            
+            if($ColSearch)
+            {
+                // search column
+                $output.='<script type="text/javascript" charset="utf-8">';
+            
+                $output.='$(document).ready(function() {
+                $("tfoot input").keyup( function () {
+                /* Filter on the column */
+                var id = $(this).parent().attr("id");
+                oTable.fnFilter( this.value, id);
+                } );
+                /*send selected level value to server */        
+                $("tfoot #level").change( function () {
+                /* Filter on the column */
+                var id = $(this).parent().attr("id");
+                var value = $(this).val();
+                oTable.fnFilter( value, id);
+                } );
+                /*send selected stcomm value to server */   
+                $("tfoot .flat").change( function () {
+                /* Filter on the column */
+                var id = $(this).parent().attr("id");
+                var value = $(this).val();
+                oTable.fnFilter( value, id);
+                } );
+                });';
             $output.='</script>';
+            }
                 
             return $output;
 	}
+        
 }
 
 ?>

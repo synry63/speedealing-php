@@ -41,14 +41,35 @@ class Societe extends CommonObject
     public $fk_element='fk_soc';
     protected $childtables=array("propal","commande","facture","contrat","facture_fourn","commande_fournisseur");    // To test if we can delete object
     protected $ismultientitymanaged = 1;	// 0=No test on entity, 1=Test with field entity, 2=Test with link by societe
+    var $fk_extrafields;
+    var $fk_status;
+    var $fk_country;
+    
+    
+    var $db;
 
     /**
      *    Constructor
      *
      *    @param	DoliDB		$db		Database handler
      */
-    public function Societe(couchClient $db)
+    public function Societe($db)
     {
+        global $conf;
+        
+        $this->db = $db;
+        
+        try {
+            $this->fk_extrafields = $conf->couchdb->getDoc("extrafields:company"); // load fields company
+            $this->fk_status = $conf->couchdb->getDoc($this->fk_extrafields->fields->Main->Status->dict); //load status table
+            $this->fk_country = $conf->couchdb->getDoc($this->fk_extrafields->fields->Main->Country->dict); //load country table
+        }catch (Exception $e) {
+            $error="Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+            print $error;
+            exit;
+        }
+
+        
         parent::__construct($db);
 
         return 1;
@@ -152,25 +173,7 @@ class Societe extends CommonObject
         // For triggers
         //if ($call_trigger) $this->oldobject = dol_clone($this);
 
-        $now=dol_now();
         
-        // Clean parameters
-        $this->tel			= preg_replace("/\s/","",$this->tel);
-        $this->tel			= preg_replace("/\./","",$this->tel);
-        $this->fax			= preg_replace("/\s/","",$this->fax);
-        $this->fax			= preg_replace("/\./","",$this->fax);
-        $this->url			= $this->url?clean_url($this->url,0):'';
-        $this->tms                      = $now;
-
-        $this->tva_intra	= dol_sanitizeFileName($this->tva_intra,'');
-
-        // Local taxes
-
-        $this->capital=price2num(trim($this->capital),'MT');
-
-        // For automatic creation
-        if ($this->code_client == -1) $this->get_codeclient($this->prefix_comm,0);
-        if ($this->code_fournisseur == -1) $this->get_codefournisseur($this->prefix_comm,1);
 
         // Check parameters
         if (! empty($conf->global->SOCIETE_MAIL_REQUIRED) && ! isValidEMail($this->email))
@@ -473,6 +476,8 @@ class Societe extends CommonObject
         if ($this->id)
         {
             $this->db->begin();
+            
+            $now=dol_now();
 
             // Positionne remise courante
             $sql = "UPDATE ".MAIN_DB_PREFIX."societe ";
@@ -489,7 +494,7 @@ class Societe extends CommonObject
             // Ecrit trace dans historique des remises
             $sql = "INSERT INTO ".MAIN_DB_PREFIX."societe_remise ";
             $sql.= " (datec, fk_soc, remise_client, note, fk_user_author)";
-            $sql.= " VALUES (".$this->db->idate(mktime()).", ".$this->id.", '".$remise."',";
+            $sql.= " VALUES (".$this->db->idate($now).", ".$this->id.", '".$remise."',";
             $sql.= " '".$this->db->escape($note)."',";
             $sql.= " ".$user->id;
             $sql.= ")";
@@ -703,35 +708,12 @@ class Societe extends CommonObject
     {
         global $conf,$langs;
 
-        $name=$this->name;
+        $name=$this->ThirdPartyName;
 
         $result='';
         $lien=$lienfin='';
 
-        if ($option == 'customer' || $option == 'compta')
-        {
-            if (($this->client == 1 || $this->client == 3) && empty($conf->global->SOCIETE_DISABLE_CUSTOMERS))  // Only customer
-            {
-                $lien = '<a href="'.DOL_URL_ROOT.'/comm/fiche.php?socid='.$this->id;
-            }
-            elseif($this->client == 2 && empty($conf->global->SOCIETE_DISABLE_PROSPECTS))   // Only prospect
-            {
-                $lien = '<a href="'.DOL_URL_ROOT.'/comm/prospect/fiche.php?socid='.$this->id;
-            }
-        }
-        else if ($option == 'prospect' && empty($conf->global->SOCIETE_DISABLE_PROSPECTS))
-        {
-            $lien = '<a href="'.DOL_URL_ROOT.'/comm/prospect/fiche.php?socid='.$this->id;
-        }
-        else if ($option == 'supplier')
-        {
-            $lien = '<a href="'.DOL_URL_ROOT.'/fourn/fiche.php?socid='.$this->id;
-        }
-        // By default
-        if (empty($lien))
-        {
-            $lien = '<a href="'.DOL_URL_ROOT.'/societe/soc.php?socid='.$this->id;
-        }
+        $lien = '<a href="'.DOL_URL_ROOT.'/societe/fiche.php?id='.$this->id();
 
         // Add type of canvas
         $lien.=(!empty($this->canvas)?'&amp;canvas='.$this->canvas:'').'">';
@@ -750,9 +732,9 @@ class Societe extends CommonObject
      *    @param	int		$mode       0=libelle long, 1=libelle court, 2=Picto + Libelle court, 3=Picto, 4=Picto + Libelle long
      *    @return   string        		Libelle
      */
-    function getLibStatut($mode=0)
+    function getLibStatus()
     {
-        return $this->LibStatut($this->status,$mode);
+        return $this->LibStatut($this->Status);
     }
 
     /**
@@ -762,41 +744,15 @@ class Societe extends CommonObject
      *  @param	int		$mode           0=libelle long, 1=libelle court, 2=Picto + Libelle court, 3=Picto, 4=Picto + Libelle long, 5=Libelle court + Picto
      *  @return	string          		Libelle du statut
      */
-    function LibStatut($statut,$mode=0)
+    function LibStatut($status)
     {
-        global $langs;
+        global $langs,$conf;
         $langs->load('companies');
-
-        if ($mode == 0)
-        {
-            if ($statut==0) return $langs->trans("ActivityCeased");
-            if ($statut==1) return $langs->trans("InActivity");
-        }
-        if ($mode == 1)
-        {
-            if ($statut==0) return $langs->trans("ActivityCeased");
-            if ($statut==1) return $langs->trans("InActivity");
-        }
-        if ($mode == 2)
-        {
-            if ($statut==0) return img_picto($langs->trans("ActivityCeased"),'statut6').' '.$langs->trans("ActivityCeased");
-            if ($statut==1) return img_picto($langs->trans("InActivity"),'statut4').' '.$langs->trans("InActivity");
-        }
-        if ($mode == 3)
-        {
-            if ($statut==0) return img_picto($langs->trans("ActivityCeased"),'statut6');
-            if ($statut==1) return img_picto($langs->trans("InActivity"),'statut4');
-        }
-        if ($mode == 4)
-        {
-            if ($statut==0) return img_picto($langs->trans("ActivityCeased"),'statut6').' '.$langs->trans("ActivityCeased");
-            if ($statut==1) return img_picto($langs->trans("InActivity"),'statut4').' '.$langs->trans("InActivity");
-        }
-        if ($mode == 5)
-        {
-            if ($statut==0) return $langs->trans("ActivityCeased").' '.img_picto($langs->trans("ActivityCeased"),'statut6');
-            if ($statut==1) return $langs->trans("InActivity").' '.img_picto($langs->trans("InActivity"),'statut4');
-        }
+        
+        if(empty($status))
+            return null;
+        
+        return '<span class="lbl '.$this->fk_status->values->$status->cssClass.' sl_status ttip_r edit">'.$langs->trans($this->fk_status->values->$status->label).'</span>';
     }
 
     /**
@@ -1053,8 +1009,8 @@ class Societe extends CommonObject
             $var = $conf->global->SOCIETE_CODECLIENT_ADDON;
             $mod = new $var;
 
-            $this->code_client = $mod->getNextValue($objsoc,$type);
-            $this->prefixCustomerIsRequired = $mod->prefixIsRequired;
+            return $mod->getNextValue($objsoc,$type);
+            //$this->prefixCustomerIsRequired = $mod->prefixIsRequired;
 
             dol_syslog(get_class($this)."::get_codeclient code_client=".$this->code_client." module=".$var);
         }
@@ -1082,7 +1038,7 @@ class Societe extends CommonObject
             $var = $conf->global->SOCIETE_CODEFOURNISSEUR_ADDON;
             $mod = new $var;
 
-            $this->code_fournisseur = $mod->getNextValue($objsoc,$type);
+            return $mod->getNextValue($objsoc,$type);
 
             dol_syslog(get_class($this)."::get_codefournisseur code_fournisseur=".$this->code_fournisseur." module=".$var);
         }
@@ -1785,7 +1741,221 @@ class Societe extends CommonObject
         $this->idprof3='idprof3';
         $this->idprof4='idprof4';
     }
+    
+    /**
+     * return box address for a company
+     *
+     *  @return	@string
+     */
+    function content_box_information($content="")
+    {
+        global $conf,$user,$langs;
+        
+        $rtr = '<div class="row">';
+        $rtr.= '<div class="two column vcard avatar">';
+        $rtr.= '<div class="avatar sepH_b">';
+        $rtr.= '<img src="'.DOL_URL_ROOT.'/theme/companies.png" alt="" />';
+        $rtr.= '</div>';
+        $rtr.= '</div>';
+        $rtr.= '<div class="five column vcard">';
+        $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Apartment-Building.png" alt="" />';
+        $rtr.= '<h1 class="sepH_a">'.$img.$this->ThirdPartyName.'</h1>';
+        $rtr.= $this->getLibStatus();
+        $rtr.= '<h5 class="sepH_a s_color">';
+        $rtr.= dol_print_address($this->Address,'gmap','thirdparty',$this->id());
+        $rtr.= '</h5>';
+        //$img=picto_from_langcode($object->country_id);
+        $rtr.= '<h3 class="sepH_a country">'.$this->Zip.($this->Zip && $this->Town?" ":"").$this->Town;
+        // MAP GPS
+        $rtr.= "&nbsp".img_picto(($this->gps[0].','.$this->gps[1]),(($this->gps[0] && $this->gps[1])?"green-dot":"red-dot"));
+        $rtr.= '</h3>';
+        $rtr.= '</div>';
+        
+        // Partie droite
+        $rtr.= '<div class="five column">';
+        $rtr.= '<div class="row sepH_b">';
+        
+        
+        if ($user->rights->societe->supprimer)
+        {
+            $rtr.= '<div class="gh_button-group right">';
+            if ($user->rights->societe->creer)
+            {
+                $rtr.= '<a class="gh_button primary pill" href="'.$_SERVER["PHP_SELF"].'?id='.$this->id().'&amp;action=edit">'.$langs->trans("Modify").'</a>'."\n";
+            }
+            $rtr.= '<span id="action-delete" class="gh_button pill icon trash danger">'.$langs->trans('Delete').'</span>'."\n";
+            $rtr.= '</div>';
+        }
+        else
+        {
+            if ($user->rights->societe->creer)
+               $rtr.= '<a class="gh_button pill primary right" href="'.$_SERVER["PHP_SELF"].'?id='.$this->id().'&amp;action=edit">'.$langs->trans("Modify").'</a>'."\n"; // bouton rond
+        }
+        
+        $rtr.= '</div>';
+        
+        if($this->CustomerCode || $this->SupplierCode)
+        {
+            $rtr.= '<div class="row vcard sepH_b inner_heading">';
+            $rtr.= '<ul>';
+            if($this->CustomerCode)
+            {
+                $key='CustomerCode';
+                $label = $langs->trans($key);
+                $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Money.png" title="'.$label.'" />';
+                $rtr.= '<li><span>'.$img.'</span><span class="s_color">'.$label.'</span><span> : </span><span>'.$this->$key.'</span></li>';
+            }
+            if($this->SupplierCode)
+            {
+                $key='SupplierCode';
+                $label = $langs->trans($key);
+                $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Money.png" title="'.$label.'" />';
+                $rtr.= '<li><span>'.$img.'</span><span class="s_color">'.$label.'</span><span> : </span><span>'.$this->$key.'</span></li>';
+            }
+            $rtr.= '</ul>';
+            $rtr.= '</div>';
+        }
+        
+        $rtr.= $content; //external content
+        
+        $rtr.= '</div>'; // termine la colonne droite
+        $rtr.= '</div>';
+        
+        return $rtr;
+    }
+    
+     /**
+     * return div with block note
+     *
+     *  @return	@string
+     */
+    function content_note()
+    {
+        global $conf,$user,$langs;
+        
+        // Notes
+        $rtr = '<div class="row vcard">';
+        $rtr.= '<div class="twelve column">';
+        $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Info-_-About.png" title="'.$langs->trans($key).'" />';
+        $rtr.= '<h4 class="inner_heading">'.$img.$langs->trans("Notes").'</h4>';
+        $rtr.= '<p class="edit_wysiwyg ttip_l">'.$this->notes.'</p>';
+        $rtr.= '</div>'; 
+        $rtr.= '</div>'; // End block note
+        
+        return $rtr;
+    }
+    
+    /**
+     * return div with list of information accounting (Customer Code,TVA,...)
+     *
+     *  @return	@string
+     */
+    function content_accounting()
+    {
+        global $conf,$user,$langs;
+        
+        // List of tel, fax, mail...
+        $rtr = '<div class="row vcard sepH_c">';
+        $rtr.= '<ul class="fright">';
+        
+        // list of compta codes
+        foreach ($this->fk_extrafields->fields->Accounting as $key => $aRow) {
+            if(is_object($aRow) && $aRow->enable)
+            {
+                $label = (empty($aRow->label) ? $langs->trans($key) : $langs->trans($aRow->label));
+                $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Money.png" title="'.$label.'" />';
+                $rtr.= '<li><span class="s_color">'.$label.'</span><span> : </span><span class="ttip_r edit">'.$this->Accounting->$key.'</span><span>'.$img.'</span></li>';
+            }
+        }
 
+        $rtr.= '</ul>';
+        $rtr.= '</div>';
+
+        return $rtr;
+    }
+    
+    /**
+     * return div with list of information contact (tel, fax, ...)
+     *
+     *  @return	@string
+     */
+    function content_contact()
+    {
+        global $conf,$user,$langs;
+        
+        // List of tel, fax, mail...
+        $rtr = '<div class="row vcard sepH_b">';
+        $rtr.= '<ul class="fright">';
+        
+        // list tel, fax, mail
+        foreach ($this->fk_extrafields->fields->AddressBook as $key => $aRow) {
+            if(is_object($aRow) && $aRow->enable)
+            {
+                $label = (empty($aRow->label) ? $langs->trans($key) : $langs->trans($aRow->label));
+                $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/'.$this->fk_extrafields->fields->AddressBook->$key->type.'.png" title="'.$label.'" />';
+                if($this->fk_extrafields->fields->AddressBook->$key->type == "AC_EMAIL")
+                    $rtr.= '<li><span class="s_color">'.$label.'</span> : <span class="ttip_r edit">'.$this->AddressBook->$key.'</span><span>'.$img.'</span></li>';
+                else if($this->fk_extrafields->fields->AddressBook->$key->type == "AC_URL")
+                {
+                    if(!empty($this->$key))
+                    {
+                        if($aRow->site == "www") // An  URL
+                            $rtr.= '<li>'.dol_print_url($aRow->value).'</li>';
+                        else // Facebook linkedin...
+                            $rtr.= '<li>'.dol_print_url($label,$aRow->value).'<span>'.$img.'</span></li>';
+                    }
+                }
+                else
+                    $rtr.= '<li><span class="s_color">'.$label.'</span> : <span class="ttip_r edit">'.dol_print_phone($this->AddressBook->$key,$this->country_id,0,$this->id(),$this->fk_extrafields->fields->AddressBook->$key->type).'</span><span>'.$img.'</span></li>';
+            }
+        }
+        
+        $rtr.= '</ul>';
+        $rtr.= '</div>';
+
+        return $rtr;
+    }
+    
+    /**
+     * return div with list of commercial infomations
+     *
+     *  @return	@string
+     */
+    function content_deal()
+    {
+        global $conf,$user,$langs;
+        
+        // List of tel, fax, mail...
+        $rtr = '<div class="row vcard sepH_c">';
+        $rtr.= '<ul class="fright">';
+        
+        // list of compta codes
+        foreach ($this->fk_extrafields->fields->Deal as $key => $aRow) {
+            if(is_object($aRow) && $aRow->enable)
+            {
+                $label = (empty($aRow->label) ? $langs->trans($key) : $langs->trans($aRow->label));
+                $img = '<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Money.png" title="'.$label.'" />';
+                $rtr.= '<li><span class="s_color">'.$label.'</span><span> : </span><span class="ttip_r edit">'.$this->Deal->$key.'</span><span>'.$img.'</span></li>';
+            }
+        }
+        $rtr.= '</ul>';
+        $rtr.= '</div>';
+
+        return $rtr;
+    }
+    
+    //temporaire
+    function fetch($socid)
+    {
+        global $conf;
+        try {
+            $result = $conf->couchdb->key((int)$socid)->getView("societe","rowid");
+            $this->load($result->rows[0]->value);
+        } catch (Exception $e) {
+            return 0;
+        }
+        return 1;
+    }
 }
 
 ?>

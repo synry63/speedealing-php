@@ -1,7 +1,7 @@
 <?PHP
 /* Copyright (C) 2002-2007 Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2003      Xavier Dutoit        <doli@sydesy.com>
- * Copyright (C) 2004-2010 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2012 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2004      Sebastien Di Cintio  <sdicintio@ressource-toi.org>
  * Copyright (C) 2004      Benoit Mortier       <benoit.mortier@opensides.be>
  * Copyright (C) 2005-2011 Regis Houssin        <regis@dolibarr.fr>
@@ -29,7 +29,7 @@
  *  \brief      File that include conf.php file and commons lib like functions.lib.php
  */
 
-if (! defined('DOL_VERSION')) define('DOL_VERSION','3.2.0-beta');	// Also defined in htdocs/install/inc.php (Ex: x.y.z-alpha, x.y.z)
+if (! defined('DOL_VERSION')) define('DOL_VERSION','3.3.0-alpha');
 if (! defined('EURO')) define('EURO',chr(128));
 
 // Define syslog constants
@@ -53,9 +53,12 @@ if (! defined('LOG_DEBUG'))
     }
 }
 
-// Forcage du parametrage PHP error_reporting (Dolibarr non utilisable en mode error E_ALL)
-error_reporting(E_ALL ^ E_NOTICE);
+// Force PHP error_reporting setup (Dolibarr may report warning without this)
+error_reporting(E_ALL & ~(E_STRICT|E_NOTICE));
 //error_reporting(E_ALL | E_STRICT);
+
+// End of common declaration part
+if (defined('DOL_INC_FOR_VERSION_ERROR')) return;
 
 
 // Define vars
@@ -77,10 +80,7 @@ if (! $result && ! empty($_SERVER["GATEWAY_INTERFACE"]))    // If install not do
 }
 
 // Disable php display errors
-if (! empty($dolibarr_main_prod))
-{
-	ini_set('display_errors','Off');
-}
+if (! empty($dolibarr_main_prod)) ini_set('display_errors','Off');
 
 // Clean parameters
 $dolibarr_main_data_root=trim($dolibarr_main_data_root);
@@ -92,8 +92,8 @@ $dolibarr_main_document_root_alt=trim($dolibarr_main_document_root_alt);
 if (empty($dolibarr_main_db_port)) $dolibarr_main_db_port=0;		// Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
 if (empty($dolibarr_main_db_type)) $dolibarr_main_db_type='mysql';	// Pour compatibilite avec anciennes configs, si non defini, on prend 'mysql'
 if (empty($dolibarr_main_db_prefix)) $dolibarr_main_db_prefix='llx_';
-if (empty($dolibarr_main_db_character_set)) $dolibarr_main_db_character_set='latin1';		// Old installation
-if (empty($dolibarr_main_db_collation)) $dolibarr_main_db_collation='latin1_swedish_ci';	// Old installation
+if (empty($dolibarr_main_db_character_set)) $dolibarr_main_db_character_set=($dolibarr_main_db_type=='mysql'?'latin1':'');		// Old installation
+if (empty($dolibarr_main_db_collation)) $dolibarr_main_db_collation=($dolibarr_main_db_type=='mysql'?'latin1_swedish_ci':'');	// Old installation
 if (empty($dolibarr_main_db_encryption)) $dolibarr_main_db_encryption=0;
 if (empty($dolibarr_main_db_cryptkey)) $dolibarr_main_db_cryptkey='';
 if (empty($dolibarr_main_limit_users)) $dolibarr_main_limit_users=0;
@@ -237,8 +237,6 @@ include_once(DOL_DOCUMENT_ROOT ."/core/lib/security.lib.php");
 include_once(DOL_DOCUMENT_ROOT ."/core/db/couchdb/lib/couch.php");
 include_once(DOL_DOCUMENT_ROOT ."/core/db/couchdb/lib/couchClient.php");
 include_once(DOL_DOCUMENT_ROOT ."/core/db/couchdb/lib/couchDocument.php");
-
-$couch = new couchClient("http://couch.symeos.com:5984/","demo");
 
 // If password is encoded, we decode it
 if (preg_match('/crypted:/i',$dolibarr_main_db_pass) || ! empty($dolibarr_main_db_encrypted_pass))

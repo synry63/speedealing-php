@@ -107,10 +107,8 @@ class Commande extends CommonObject
      *
      *  @param		DoliDB		$db      Database handler
      */
-    function Commande($db)
+    function __construct($db)
     {
-        global $langs;
-        $langs->load('orders');
         $this->db = $db;
 
         $this->remise = 0;
@@ -621,7 +619,7 @@ class Commande extends CommonObject
 
         // $date_commande is deprecated
         $date = ($this->date_commande ? $this->date_commande : $this->date);
-        
+
         $now=dol_now();
 
         $this->db->begin();
@@ -685,7 +683,7 @@ class Commande extends CommonObject
                         $this->lines[$i]->remise_percent,
                         $this->lines[$i]->info_bits,
                         $this->lines[$i]->fk_remise_except,
-    					'HT',
+                        'HT',
                         0,
                         $this->lines[$i]->date_start,
                         $this->lines[$i]->date_end,
@@ -2125,11 +2123,11 @@ class Commande extends CommonObject
      *  @param		int				$skip_update_total	Skip update of total
      *  @return   	int              					< 0 if KO, > 0 if OK
      */
-    function updateline($rowid, $desc, $pu, $qty, $remise_percent=0, $txtva, $txlocaltax1=0,$txlocaltax2=0, $price_base_type='HT', $info_bits=0, $date_start='', $date_end='', $type=0, $fk_parent_line=0, $skip_update_total=0)
+    function updateline($rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1=0,$txlocaltax2=0, $price_base_type='HT', $info_bits=0, $date_start='', $date_end='', $type=0, $fk_parent_line=0, $skip_update_total=0)
     {
         global $conf;
 
-        dol_syslog("CustomerOrder::UpdateLine $rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, $price_base_type, $info_bits, $date_start, $date_end, $type");
+        dol_syslog(get_class($this)."::updateline $rowid, $desc, $pu, $qty, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, $price_base_type, $info_bits, $date_start, $date_end, $type");
         include_once(DOL_DOCUMENT_ROOT.'/core/lib/price.lib.php');
 
         if ($this->brouillon)
@@ -2227,13 +2225,13 @@ class Commande extends CommonObject
             {
                 $this->error=$this->db->error();
                 $this->db->rollback();
-                dol_syslog("CustomerOrder::UpdateLine Error=".$this->error, LOG_ERR);
+                dol_syslog(get_class($this)."::updateline Error=".$this->error, LOG_ERR);
                 return -1;
             }
         }
         else
         {
-            $this->error="CustomerOrder::Updateline Order status makes operation forbidden";
+            $this->error=get_class($this)."::updateline Order status makes operation forbidden";
             return -2;
         }
     }
@@ -2271,7 +2269,7 @@ class Commande extends CommonObject
         {
         	// Delete order details
         	$sql = 'DELETE FROM '.MAIN_DB_PREFIX."commandedet WHERE fk_commande = ".$this->id;
-        	dol_syslog("Commande::delete sql=".$sql);
+        	dol_syslog(get_class($this)."::delete sql=".$sql);
         	if (! $this->db->query($sql) )
         	{
         		dol_syslog(get_class($this)."::delete error", LOG_ERR);
@@ -2364,7 +2362,8 @@ class Commande extends CommonObject
             $clause = " AND";
         }
         $sql.= $clause." c.entity = ".$conf->entity;
-        $sql.= " AND c.fk_statut IN (1,2,3) AND c.facture = 0";
+        //$sql.= " AND c.fk_statut IN (1,2,3) AND c.facture = 0";
+        $sql.= " AND ((c.fk_statut IN (1,2)) OR (c.fk_statut = 3 AND c.facture = 0))";    // If status is 2 and facture=1, it must be selected
         if ($user->societe_id) $sql.=" AND c.fk_soc = ".$user->societe_id;
 
         $resql=$this->db->query($sql);
@@ -2445,7 +2444,7 @@ class Commande extends CommonObject
             if ($statut==-1) return img_picto($langs->trans('StatusOrderCanceled'),'statut5').' '.$langs->trans('StatusOrderCanceledShort');
             if ($statut==0) return img_picto($langs->trans('StatusOrderDraft'),'statut0').' '.$langs->trans('StatusOrderDraftShort');
             if ($statut==1) return img_picto($langs->trans('StatusOrderValidated'),'statut1').' '.$langs->trans('StatusOrderValidatedShort');
-            if ($statut==2) return img_picto($langs->trans('StatusOrderOnProcess'),'statut3').' '.$langs->trans('StatusOrderSentShort');
+            if ($statut==2) return img_picto($langs->trans('StatusOrderSent'),'statut3').' '.$langs->trans('StatusOrderSentShort');
             if ($statut==3 && ! $facturee) return img_picto($langs->trans('StatusOrderToBill'),'statut7').' '.$langs->trans('StatusOrderToBillShort');
             if ($statut==3 && $facturee) return img_picto($langs->trans('StatusOrderProcessed'),'statut6').' '.$langs->trans('StatusOrderProcessedShort');
         }
@@ -2463,7 +2462,7 @@ class Commande extends CommonObject
             if ($statut==-1) return img_picto($langs->trans('StatusOrderCanceled'),'statut5').' '.$langs->trans('StatusOrderCanceled');
             if ($statut==0) return img_picto($langs->trans('StatusOrderDraft'),'statut0').' '.$langs->trans('StatusOrderDraft');
             if ($statut==1) return img_picto($langs->trans('StatusOrderValidated'),'statut1').' '.$langs->trans('StatusOrderValidated');
-            if ($statut==2) return img_picto($langs->trans('StatusOrderSentShort'),'statut3').' '.$langs->trans('StatusOrderOnProcess');
+            if ($statut==2) return img_picto($langs->trans('StatusOrderSentShort'),'statut3').' '.$langs->trans('StatusOrderSent');
             if ($statut==3 && ! $facturee) return img_picto($langs->trans('StatusOrderToBill'),'statut7').' '.$langs->trans('StatusOrderToBill');
             if ($statut==3 && $facturee) return img_picto($langs->trans('StatusOrderProcessed'),'statut6').' '.$langs->trans('StatusOrderProcessed');
         }
@@ -2472,7 +2471,7 @@ class Commande extends CommonObject
             if ($statut==-1) return $langs->trans('StatusOrderCanceledShort').' '.img_picto($langs->trans('StatusOrderCanceled'),'statut5');
             if ($statut==0) return $langs->trans('StatusOrderDraftShort').' '.img_picto($langs->trans('StatusOrderDraft'),'statut0');
             if ($statut==1) return $langs->trans('StatusOrderValidatedShort').' '.img_picto($langs->trans('StatusOrderValidated'),'statut1');
-            if ($statut==2) return $langs->trans('StatusOrderSentShort').' '.img_picto($langs->trans('StatusOrderOnProcess'),'statut3');
+            if ($statut==2) return $langs->trans('StatusOrderSentShort').' '.img_picto($langs->trans('StatusOrderSent'),'statut3');
             if ($statut==3 && ! $facturee) return $langs->trans('StatusOrderToBillShort').' '.img_picto($langs->trans('StatusOrderToBill'),'statut7');
             if ($statut==3 && $facturee) return $langs->trans('StatusOrderProcessedShort').' '.img_picto($langs->trans('StatusOrderProcessed'),'statut6');
         }

@@ -58,7 +58,7 @@ class pdf_canelle extends ModelePDFSuppliersInvoices
 	 *	Constructor
 	 *
 	 *  @param	DoliDB		$db     	Database handler
-	 *  @param	Societe		$object		Third party providing invoice
+	 *  @param	Societe		$object		Supplier invoice
 	 */
 	function __construct($db,$object)
 	{
@@ -398,7 +398,7 @@ class pdf_canelle extends ModelePDFSuppliersInvoices
 				$pdf->Output($file,'F');
 
 				// Actions on extra fields (by external module or standard code)
-				if (! is_object($hookmanager))
+				if (!is_object($hookmanager))
 				{
 					include_once(DOL_DOCUMENT_ROOT.'/core/class/hookmanager.class.php');
 					$hookmanager=new HookManager($this->db);

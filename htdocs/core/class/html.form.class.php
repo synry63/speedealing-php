@@ -105,7 +105,7 @@ class Form
             $ret.='<table class="nobordernopadding" width="100%"><tr><td nowrap="nowrap">';
             $ret.=$langs->trans($text);
             $ret.='</td>';
-            if (GETPOST('action') != 'edit'.$htmlname && $perm) $ret.='<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=edit'.$htmlname.'&amp;id='.(isset($object->id)?$object->id:$object->id()).$moreparam.'">'.img_edit($langs->trans('Edit'),1).'</a></td>';
+            if (GETPOST('action') != 'edit'.$htmlname && $perm) $ret.='<td align="right"><a href="'.$_SERVER["PHP_SELF"].'?action=edit'.$htmlname.'&amp;id='.$object->id.$moreparam.'">'.img_edit($langs->trans('Edit'),1).'</a></td>';
             $ret.='</tr></table>';
         }
 
@@ -147,7 +147,7 @@ class Form
                 $ret.='<form method="post" action="'.$_SERVER["PHP_SELF"].($moreparam?'?'.$moreparam:'').'">';
                 $ret.='<input type="hidden" name="action" value="set'.$htmlname.'">';
                 $ret.='<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
-                $ret.='<input type="hidden" name="id" value="'.(isset($object->id)?$object->id:$object->id()).'">';
+                $ret.='<input type="hidden" name="id" value="'.$object->id.'">';
                 $ret.='<table class="nobordernopadding" cellpadding="0" cellspacing="0">';
                 $ret.='<tr><td>';
                 if (preg_match('/^(string|email|numeric)/',$typeofdata))
@@ -162,7 +162,7 @@ class Form
                 }
                 else if ($typeofdata == 'day' || $typeofdata == 'datepicker')
                 {
-                    $ret.=$this->form_date($_SERVER['PHP_SELF'].'?id='.(isset($object->id)?$object->id:$object->id()),$value,$htmlname);
+                    $ret.=$this->form_date($_SERVER['PHP_SELF'].'?id='.$object->id,$value,$htmlname);
                 }
                 else if (preg_match('/^select;/',$typeofdata))
                 {
@@ -256,7 +256,7 @@ class Form
             {
                 $element = $object->element;
                 $table_element = $object->table_element;
-                $fk_element = $object->id();
+                $fk_element = $object->id;
             }
 
             if (is_object($extObject))
@@ -495,11 +495,11 @@ class Form
                     if ($selected && $selected != '-1' && ($selected == $row['rowid'] || $selected == $row['code_iso'] || $selected == $row['label']) )
                     {
                         $foundselected=true;
-                        $out.= '<option value="'.$row['code_iso'].'" selected="selected">';
+                        $out.= '<option value="'.$row['rowid'].'" selected="selected">';
                     }
                     else
                     {
-                        $out.= '<option value="'.$row['code_iso'].'">';
+                        $out.= '<option value="'.$row['rowid'].'">';
                     }
                     $out.= $row['label'];
                     if ($row['code_iso']) $out.= ' ('.$row['code_iso'] . ')';
@@ -2138,7 +2138,7 @@ class Form
      * 	   @param  	int			$useajax		   	0=No, 1=Yes, 2=Yes but submit page with &confirm=no if choice is No, 'xxx'=preoutput confirm box with div id=dialog-confirm-xxx
      *     @param  	int			$height          	Force height of box
      *     @param	int			$width				Force width of bow
-     *     @return 	string      	    			'ajax' if a confirm ajax popup is shown, 'html' if it's an html form
+     *     @return 	string      	    			HTML ajax code if a confirm ajax popup is required, Pure HTML code if it's an html form
      */
     function formconfirm($page, $title, $question, $action, $formquestion='', $selectedchoice="", $useajax=0, $height=170, $width=500)
     {
@@ -2207,7 +2207,7 @@ class Form
                         $more.=$input['value'];
                         $more.='</td></tr>'."\n";
                     }
-                    array_push($inputarray,$input['name']);
+                    if ($input['type'] != 'hidden') array_push($inputarray,$input['name']);
                 }
             }
             $more.='</table>'."\n";
@@ -2228,6 +2228,18 @@ class Form
             }
             $pageyes=$page.'&action='.$action.'&confirm=yes';
             $pageno=($useajax == 2?$page.'&confirm=no':'');
+            // Add hidden fields
+            if (is_array($formquestion))
+            {
+                foreach ($formquestion as $key => $input)
+                {
+                    if ($input['type'] == 'hidden')
+                    {
+                        $pageyes.='&'.$input['name'].'='.urlencode($input['value']);
+                        $pageno.=($useajax == 2?$page.'&'.$input['name'].'='.urlencode($input['value']):'');
+                    }
+                }
+            }
 
             // New code using jQuery only
             $formconfirm.= '<div id="'.$dialogconfirm.'" title="'.dol_escape_htmltag($title).'" style="display: none;">';
@@ -2237,7 +2249,7 @@ class Form
             $formconfirm.= '<script type="text/javascript">
             $(function() {
                 var choice=\'ko\';
-                var	$inputarray='.json_encode($inputarray).';
+                var $inputarray='.json_encode($inputarray).';
                 var button=\''.$button.'\';
             	var dialogconfirm=\''.$dialogconfirm.'\';
 
@@ -2254,7 +2266,10 @@ class Form
 			             	if ($inputarray.length>0) {
 			             		$.each($inputarray, function() {
 			             			var inputname = this;
-			             			var inputvalue = $("#" + this).val();
+			             			var more = \'\';
+			             			if ($("#" + this).attr("type") == \'checkbox\') { more = \':checked\'; }
+			             			var inputvalue = $("#" + this + more).val();
+			             			if (typeof inputvalue == \'undefined\') { inputvalue=\'\'; }
 			             			options += \'&\' + inputname + \'=\' + inputvalue;
 			             		});
 			             		//alert(options);
@@ -2293,10 +2308,10 @@ class Form
 
             $formconfirm.= '<table width="100%" class="valid">'."\n";
 
-            // Ligne titre
+            // Line title
             $formconfirm.= '<tr class="validtitre"><td class="validtitre" colspan="3">'.img_picto('','recent').' '.$title.'</td></tr>'."\n";
 
-            // Ligne formulaire
+            // Line form fields
             if ($more)
             {
                 $formconfirm.='<tr class="valid"><td class="valid" colspan="3">'."\n";
@@ -2304,7 +2319,7 @@ class Form
                 $formconfirm.='</td></tr>'."\n";
             }
 
-            // Ligne message
+            // Line with question
             $formconfirm.= '<tr class="valid">';
             $formconfirm.= '<td class="valid">'.$question.'</td>';
             $formconfirm.= '<td class="valid">';
@@ -2316,6 +2331,7 @@ class Form
 
             $formconfirm.= '</table>'."\n";
 
+            // Add hidden fields
             if (is_array($formquestion))
             {
                 foreach ($formquestion as $key => $input)
@@ -2915,7 +2931,7 @@ class Form
     		}
     		else
     		{
-    			$this->error = '<font class="error">'.$langs->trans("ErrorNoVATRateDefinedForSellerCountry",$code_pays).'</font>';
+    			$this->error = '<font class="error">'.$langs->trans("ErrorNoVATRateDefinedForSellerCountry",$country_code).'</font>';
     			return -1;
     		}
     	}

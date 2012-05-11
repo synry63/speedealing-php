@@ -102,7 +102,8 @@ for (0..@ARGV-1) {
     	$FILENAMESNAPSHOT.="-".$PREFIX; 
     }
 }
-if ($ENV{"DESTI"}) { $DESTI = $ENV{"DESTI"}; }		# Force output dir if env DESTI is defined
+if ($ENV{"DESTIBETARC"} && $BUILD =~ /[a-z]/i)    { $DESTI = $ENV{"DESTIBETARC"}; }		# Force output dir if env DESTI is defined
+if ($ENV{"DESTISTABLE"}  && $BUILD =~ /^[0-9]+$/) { $DESTI = $ENV{"DESTISTABLE"}; }	# Force output dir if env DESTI is defined
 
 
 print "Makepack version $VERSION\n";
@@ -169,7 +170,7 @@ $atleastonerpm=0;
 foreach my $target (keys %CHOOSEDTARGET) {
 	if ($target =~ /RPM/i)
 	{
-		if ($atleastonerpm && ! $ENV{"DESTI"})
+		if ($atleastonerpm && ($DESTI eq "$SOURCE/build"))
 		{
 			print "Error: You asked creation of several rpms. Because all rpm have same name, you must defined an environment variable DESTI to tell packager where it can create subdirs for each generated package.\n";
 			exit;
@@ -332,6 +333,7 @@ if ($nboftargetok) {
 	    $ret=`rm -fr $BUILDROOT/$PROJECT/Thumbs.db $BUILDROOT/$PROJECT/*/Thumbs.db $BUILDROOT/$PROJECT/*/*/Thumbs.db $BUILDROOT/$PROJECT/*/*/*/Thumbs.db $BUILDROOT/$PROJECT/*/*/*/*/Thumbs.db`;
 	    $ret=`rm -f  $BUILDROOT/$PROJECT/.cvsignore $BUILDROOT/$PROJECT/*/.cvsignore $BUILDROOT/$PROJECT/*/*/.cvsignore $BUILDROOT/$PROJECT/*/*/*/.cvsignore $BUILDROOT/$PROJECT/*/*/*/*/.cvsignore $BUILDROOT/$PROJECT/*/*/*/*/*/.cvsignore $BUILDROOT/$PROJECT/*/*/*/*/*/*/.cvsignore`;
 	    $ret=`rm -f  $BUILDROOT/$PROJECT/.gitignore $BUILDROOT/$PROJECT/*/.gitignore $BUILDROOT/$PROJECT/*/*/.gitignore $BUILDROOT/$PROJECT/*/*/*/.gitignore $BUILDROOT/$PROJECT/*/*/*/*/.gitignore $BUILDROOT/$PROJECT/*/*/*/*/*/.gitignore $BUILDROOT/$PROJECT/*/*/*/*/*/*/.gitignore`;
+        $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/theme/amarok`;
    	    $ret=`rm -f  $BUILDROOT/$PROJECT/htdocs/includes/geoip/sample*.*`;
 	    $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/jquery/plugins/lightbox`;
 	    $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/jquery/plugins/jstree`;
@@ -339,6 +341,7 @@ if ($nboftargetok) {
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/phpexcel/license.txt`;
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/phpexcel/PHPExcel/Shared/PDF`;
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/phpexcel/PHPExcel/Shared/PCLZip`;
+        $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/savant`;
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/tcpdf/fonts/dejavu-fonts-ttf-2.33`;
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/tcpdf/fonts/freefont-20100919`;
         $ret=`rm -fr $BUILDROOT/$PROJECT/htdocs/includes/tcpdf/fonts/utils`;

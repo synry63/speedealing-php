@@ -185,12 +185,12 @@ class Adherent extends CommonObject
 	function makeSubstitution($text)
 	{
 		global $langs;
-		
+
 		$birthday = dol_print_date($this->naiss,'day');
-		
+
 		$msgishtml = 0;
 		if (dol_textishtml($text,1)) $msgishtml = 1;
-		
+
 		$infos='';
 		if ($this->civilite_id) $infos.= $langs->transnoentities("UserTitle").": ".$this->getCivilityLabel(1)."\n";
 		$infos.= $langs->transnoentities("id").": ".$this->id."\n";
@@ -207,13 +207,27 @@ class Adherent extends CommonObject
 		$infos.= $langs->transnoentities("Birthday").": ".$birthday."\n";
 		$infos.= $langs->transnoentities("Photo").": ".$this->photo."\n";
 		$infos.= $langs->transnoentities("Public").": ".yn($this->public);
-		
+
 		// Substitutions
 		$substitutionarray=array(
 				'%DOL_MAIN_URL_ROOT%'=>DOL_MAIN_URL_ROOT,
 				'%ID%'=>$msgishtml?dol_htmlentitiesbr($this->id):$this->id,
-				'%INFOS%'=>$msgishtml?dol_htmlentitiesbr($infos):$infos,
 				'%CIVILITE%'=>$this->getCivilityLabel($msgishtml?0:1),
+				'%FIRSTNAME%'=>$msgishtml?dol_htmlentitiesbr($this->firstname):$this->firstname,
+				'%LASTNAME%'=>$msgishtml?dol_htmlentitiesbr($this->lastname):$this->lastname,
+				'%FULLNAME%'=>$msgishtml?dol_htmlentitiesbr($this->getFullName($langs)):$this->getFullName($langs),
+				'%COMPANY%'=>$msgishtml?dol_htmlentitiesbr($this->societe):$this->societe,
+				'%ADDRESS%'=>$msgishtml?dol_htmlentitiesbr($this->address):$this->address,
+				'%ZIP%'=>$msgishtml?dol_htmlentitiesbr($this->zip):$this->zip,
+				'%TOWN%'=>$msgishtml?dol_htmlentitiesbr($this->town):$this->town,
+				'%COUNTRY%'=>$msgishtml?dol_htmlentitiesbr($this->country):$this->country,
+				'%EMAIL%'=>$msgishtml?dol_htmlentitiesbr($this->email):$this->email,
+				'%NAISS%'=>$msgishtml?dol_htmlentitiesbr($birthday):$birthday,
+				'%PHOTO%'=>$msgishtml?dol_htmlentitiesbr($this->photo):$this->photo,
+				'%LOGIN%'=>$msgishtml?dol_htmlentitiesbr($this->login):$this->login,
+				'%PASSWORD%'=>$msgishtml?dol_htmlentitiesbr($this->pass):$this->pass,
+				// For backward compatibility
+				'%INFOS%'=>$msgishtml?dol_htmlentitiesbr($infos):$infos,
 				'%PRENOM%'=>$msgishtml?dol_htmlentitiesbr($this->firstname):$this->firstname,
 				'%NOM%'=>$msgishtml?dol_htmlentitiesbr($this->lastname):$this->lastname,
 				'%SOCIETE%'=>$msgishtml?dol_htmlentitiesbr($this->societe):$this->societe,
@@ -221,15 +235,10 @@ class Adherent extends CommonObject
 				'%CP%'=>$msgishtml?dol_htmlentitiesbr($this->zip):$this->zip,
 				'%VILLE%'=>$msgishtml?dol_htmlentitiesbr($this->town):$this->town,
 				'%PAYS%'=>$msgishtml?dol_htmlentitiesbr($this->country):$this->country,
-				'%EMAIL%'=>$msgishtml?dol_htmlentitiesbr($this->email):$this->email,
-				'%NAISS%'=>$msgishtml?dol_htmlentitiesbr($birthday):$birthday,
-				'%PHOTO%'=>$msgishtml?dol_htmlentitiesbr($this->photo):$this->photo,
-				'%LOGIN%'=>$msgishtml?dol_htmlentitiesbr($this->login):$this->login,
-				'%PASSWORD%'=>$msgishtml?dol_htmlentitiesbr($this->pass):$this->pass
 		);
-		
+
 		complete_substitutions_array($substitutionarray, $langs);
-		
+
 		return make_substitutions($text,$substitutionarray);
 	}
 
@@ -696,6 +705,10 @@ class Adherent extends CommonObject
         $resql=$this->db->query($sql);
         if ($resql)
         {
+            $sql = "DELETE FROM ".MAIN_DB_PREFIX."categorie_member WHERE fk_member = ".$rowid;
+            dol_syslog(get_class($this)."::delete sql=".$sql);
+            $resql=$this->db->query($sql);
+
             $sql = "DELETE FROM ".MAIN_DB_PREFIX."cotisation WHERE fk_adherent = ".$rowid;
             dol_syslog(get_class($this)."::delete sql=".$sql);
             $resql=$this->db->query($sql);
@@ -1241,6 +1254,7 @@ class Adherent extends CommonObject
         global $langs,$conf;
 
 		$error=0;
+		$now=dol_now();
 
 		// Check parameters
         if ($this->statut == 1)
@@ -1253,7 +1267,7 @@ class Adherent extends CommonObject
 
         $sql = "UPDATE ".MAIN_DB_PREFIX."adherent SET";
         $sql.= " statut = 1";
-        $sql.= ", datevalid = ".$this->db->idate(mktime());
+        $sql.= ", datevalid = ".$this->db->idate($now);
         $sql.= ", fk_user_valid=".$user->id;
         $sql.= " WHERE rowid = ".$this->id;
 

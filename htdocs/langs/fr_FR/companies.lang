@@ -156,11 +156,11 @@ ProfId3ES=Id prof. 3 (CNAE)
 ProfId4ES=Id prof. 4 (Num Collégiale)
 ProfId5ES=-
 ProfId6ES=-
-ProfId1FR=Id prof. 1 (SIREN)
-ProfId2FR=Id prof. 2 (SIRET)
-ProfId3FR=Id prof. 3 (NAF, ex APE)
-ProfId4FR=Id prof. 4 (RCS/RM)
-ProfId5FR=-
+ProfId1FR=SIREN
+ProfId2FR=SIRET
+ProfId3FR=NAF
+ProfId4FR=RCS
+ProfId5FR=RM
 ProfId6FR=-
 ProfId1GB=Registration Number
 ProfId2GB=-
@@ -390,7 +390,9 @@ UniqueThirdParties=Total de comptes uniques
 InActivity=En activité
 ActivityCeased=Clos
 ActivityStateFilter=Statut d'activité
-
+Deal=Commercial
+Accounting=Comptabilité
+AddressBook=Fiche
 # Monkey
 MonkeyNumRefModelDesc=Renvoie le numéro sous la forme %syymm-nnnn pour les codes clients et %syymm-nnnn pour les codes fournisseurs où yy est l'année, mm le mois et nnnn un compteur séquentiel sans rupture et sans remise à 0.
 # Leopard

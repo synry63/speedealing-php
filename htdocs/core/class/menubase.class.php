@@ -26,7 +26,7 @@
 /**
  *  Class to manage menu entries
  */
-class Menubase
+class Menubase extends couchDocument
 {
     var $db;							// To store db handler
     var $error;							// To return error code (or message)
@@ -34,10 +34,8 @@ class Menubase
 
     var $id;
 
-    var $menu_handler;
     var $module;
     var $type;
-    var $mainmenu;
     var $fk_menu;
     var $fk_mainmenu;
     var $fk_leftmenu;
@@ -49,7 +47,6 @@ class Menubase
     var $level;
     var $leftmenu;		//<! Not used
     var $perms;
-    var $enabled;
     var $user;
     var $tms;
 
@@ -61,11 +58,14 @@ class Menubase
      *  @param     	string		$menu_handler	Menu handler
      *  @param     	string		$type			Type
      */
-    function Menubase($db,$menu_handler='',$type='')
+    function Menubase($db)
     {
+        global $conf;
+        
         $this->db = $db;
-        $this->menu_handler = $menu_handler;
-        $this->type = $type;
+        
+        parent::__construct($conf->couchdb);
+	$this->setAutocommit(false);
         return 1;
     }
 
@@ -301,6 +301,7 @@ class Menubase
                 $this->enabled = str_replace("\"","'",$obj->enabled);
                 $this->user = $obj->user;
                 $this->tms = $this->db->jdate($obj->tms);
+
             }
             $this->db->free($resql);
 
@@ -558,7 +559,7 @@ class Menubase
                 if ($menu['enabled'])
                 {
                     $enabled = verifCond($menu['enabled']);
-                    if ($conf->use_javascript_ajax && $conf->global->MAIN_MENU_USE_JQUERY_ACCORDION && preg_match('/^\$leftmenu/',$menu['enabled'])) $enabled=1;
+                    if (preg_match('/^\$leftmenu/',$menu['enabled'])) $enabled=1;
                     //print "verifCond rowid=".$menu['rowid']." ".$menu['enabled'].":".$enabled."<br>\n";
                 }
 
@@ -650,6 +651,24 @@ class Menubase
             }
         }
    }
+   
+   /**
+     *  Compare this->position for usort
+     *
+     *  @param  int		$a			first element
+     *  @param  int		$b			second element
+     *  @return	-1,0,1
+     */
+    public function compare($a, $b)
+    {
+        $a1 = $a->position;
+        $b1 = $b->position;
+        
+        if ($a1 == $b1) {
+            return 0;
+        }
+        return ($a1 > $b1) ? +1 : -1;
+    }
 
 }
 

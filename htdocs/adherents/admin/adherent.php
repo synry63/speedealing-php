@@ -50,7 +50,7 @@ $action = GETPOST('action','alpha');
 if ($action == 'update' || $action == 'add')
 {
 	$constname=GETPOST('constname','alpha');
-	$constvalue=(GETPOST('constvalue_'.$constname,'alpha') ? GETPOST('constvalue_'.$constname,'alpha') : GETPOST('constvalue','alpha'));
+	$constvalue=(GETPOST('constvalue_'.$constname) ? GETPOST('constvalue_'.$constname) : GETPOST('constvalue'));
 
 	if (($constname=='ADHERENT_CARD_TYPE' || $constname=='ADHERENT_ETIQUETTE_TYPE') && $constvalue == -1) $constvalue='';
 	if ($constname=='ADHERENT_LOGIN_NOT_REQUIRED') // Invert choice
@@ -60,7 +60,7 @@ if ($action == 'update' || $action == 'add')
 	}
 
 	$consttype=GETPOST('consttype','alpha');
-	$constnote=GETPOST('constnote','alpha');
+	$constnote=GETPOST('constnote');
 	$res=dolibarr_set_const($db,$constname,$constvalue,$type[$consttype],0,$constnote,$conf->entity);
 
 	if (! $res > 0) $error++;
@@ -78,7 +78,7 @@ if ($action == 'update' || $action == 'add')
 // Action activation d'un sous module du module adherent
 if ($action == 'set')
 {
-    $result=dolibarr_set_const($db, GETPOST('name','alpha'),GETPOST('value','alpha'),'',0,'',$conf->entity);
+    $result=dolibarr_set_const($db, GETPOST('name','alpha'),GETPOST('value'),'',0,'',$conf->entity);
     if ($result < 0)
     {
         print $db->error();
@@ -218,10 +218,9 @@ print_fiche_titre($langs->trans("MembersCards"),'','');
 form_constantes($constantes);
 
 print '*'.$langs->trans("FollowingConstantsWillBeSubstituted").'<br>';
-print '%DOL_MAIN_URL_ROOT%, %ID%, %PRENOM%, %NOM%, %LOGIN%, %PASSWORD%, ';
-print '%SOCIETE%, %ADRESSE%, %CP%, %VILLE%, %PAYS%, %EMAIL%, %NAISS%, %PHOTO%, %TYPE%, ';
+print '%DOL_MAIN_URL_ROOT%, %ID%, %FIRSTNAME%, %LASTNAME%, %FULLNAME%, %LOGIN%, %PASSWORD%, ';
+print '%COMPANY%, %ADDRESS%, %ZIP%, %TOWN%, %COUNTRY%, %EMAIL%, %NAISS%, %PHOTO%, %TYPE%, ';
 print '%YEAR%, %MONTH%, %DAY%';
-//print '%INFOS%'; Deprecated
 print '<br>';
 
 print '<br>';
@@ -230,11 +229,17 @@ print '<br>';
 /*
  * Edition info modele document
  */
-$constantes=array('ADHERENT_ETIQUETTE_TYPE');
+$constantes=array('ADHERENT_ETIQUETTE_TYPE','ADHERENT_ETIQUETTE_TEXT');
 
 print_fiche_titre($langs->trans("MembersTickets"),'','');
 
 form_constantes($constantes);
+
+print '*'.$langs->trans("FollowingConstantsWillBeSubstituted").'<br>';
+print '%DOL_MAIN_URL_ROOT%, %ID%, %FIRSTNAME%, %LASTNAME%, %FULLNAME%, %LOGIN%, %PASSWORD%, ';
+print '%COMPANY%, %ADDRESS%, %ZIP%, %TOWN%, %COUNTRY%, %EMAIL%, %NAISS%, %PHOTO%, %TYPE%, ';
+print '%YEAR%, %MONTH%, %DAY%';
+print '<br>';
 
 print '<br>';
 
@@ -259,10 +264,9 @@ print_fiche_titre($langs->trans("Other"),'','');
 form_constantes($constantes);
 
 print '*'.$langs->trans("FollowingConstantsWillBeSubstituted").'<br>';
-print '%DOL_MAIN_URL_ROOT%, %ID%, %PRENOM%, %NOM%, %LOGIN%, %PASSWORD%,';
-print '%SOCIETE%, %ADRESSE%, %CP%, %VILLE%, %PAYS%, %EMAIL%, %NAISS%, %PHOTO%, %TYPE%';
+print '%DOL_MAIN_URL_ROOT%, %ID%, %FIRSTNAME%, %LASTNAME%, %FULLNAME%, %LOGIN%, %PASSWORD%, ';
+print '%COMPANY%, %ADDRESS%, %ZIP%, %TOWN%, %COUNTRY%, %EMAIL%, %NAISS%, %PHOTO%, %TYPE%, ';
 //print '%YEAR%, %MONTH%, %DAY%';	// Not supported
-//print '%INFOS%'; Deprecated
 print '<br>';
 
 dol_fiche_end();

@@ -2,9 +2,9 @@
 
 /* Copyright (C) 2001-2006 Rodolphe Quiedeville <rodolphe@quiedeville.org>
  * Copyright (C) 2004-2011 Laurent Destailleur  <eldy@users.sourceforge.net>
- * Copyright (C) 2005-2009 Regis Houssin        <regis@dolibarr.fr>
+ * Copyright (C) 2005-2012 Regis Houssin        <regis@dolibarr.fr>
  * Copyright (C) 2011      Philippe Grand       <philippe.grand@atoo-net.com>
- * Copyright (C) 2011      Herve Prot           <herve.prot@symeos.com>
+ * Copyright (C) 2011-2012 Herve Prot           <herve.prot@symeos.com>
  * Copyright (C) 2011      Patrick Mary           <laube@hotmail.fr>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,21 +22,18 @@
  */
 
 /**
- * 	\file       htdocs/comm/list.php
- * 	\ingroup    commercial societe
- * 	\brief      List of customers
- * 	\version    $Id: list.php,v 1.80 2012/01/12 16:15:05 synry63 Exp $
+ *	\file       htdocs/comm/list.php
+ *	\ingroup    commercial societe
+ *	\brief      List of customers
  */
+
 require("../main.inc.php");
-require_once(DOL_DOCUMENT_ROOT . "/comm/prospect/class/prospect.class.php");
-require_once(DOL_DOCUMENT_ROOT . "/core/class/html.formother.class.php");
+require_once(DOL_DOCUMENT_ROOT."/core/class/html.formother.class.php");
 
 $langs->load("companies");
 $langs->load("customers");
 $langs->load("suppliers");
 $langs->load("commercial");
-
-
 
 // Security check
 $socid = GETPOST("socid");
@@ -50,17 +47,16 @@ $search_sale = GETPOST("search_sale");
 
 $object = new Societe($couch);
 
-if($_GET['json'])
+if($_GET['json']=="list")
 {
     $output = array(
     "sEcho" => intval($_GET['sEcho']),
     "iTotalRecords" => 0,
     "iTotalDisplayRecords" => 0,
     "aaData" => array()
-    );
+     );
 
-    $result = $object->getView("list");
-
+    $result = $object->getView("societe","list");
 
     //print_r($result);
     //exit;
@@ -68,16 +64,11 @@ if($_GET['json'])
     $output["iTotalRecords"]=$iTotal;
     $output["iTotalDisplayRecords"]=$iTotal;
 
-
     foreach($result->rows AS $aRow) {
-        if(!isset($aRow->value->commerciaux))
-            $aRow->value->commerciaux=null;
-        if(!isset($aRow->value->category))
-            $aRow->value->category=null;
-        unset($aRow->value->class);
-        unset($aRow->value->_rev);
-        $output["aaData"][]=$aRow->value;
-        unset($aRow);
+       unset($aRow->value->class);
+       unset($aRow->value->_rev);
+       $output["aaData"][]=$aRow->value;
+       unset($aRow);
     }
 
     header('Content-type: application/json');
@@ -85,6 +76,13 @@ if($_GET['json'])
     exit;
 }
 
+if($_GET['json']=="edit")
+{
+    sleep(1);
+    print "sauv";
+    
+    exit;//ajouter fonction
+}
 
 /*
  * Actions
@@ -127,7 +125,7 @@ if ($resql)
 $htmlother = new FormOther($db);
 
 
-llxHeader('', $langs->trans("ThirdParty"), $help_url, '', '', '', $object->arrayjs);
+llxHeader('', $langs->trans("ThirdParty"), $help_url, '', '', '', '');
 
 if ($type != '') {
     if ($type == 0)
@@ -140,157 +138,135 @@ if ($type != '') {
 else
     $titre = $langs->trans("ListOfAll");
 
-print_barre_liste($titre, $page, '', '', '', '', '', 0, 0);
+print '<div class="row">';
+
+print start_box($titre,"twelve","16-Companies.png");
 
 $i=0;
 $obj=new stdClass();
 
-print '<table cellpadding="0" cellspacing="0" border="0" class="liste" id="list" width="100%">';
+print '<table class="display dt_act" id="societe" >';
 // Ligne des titres 
 print'<thead>';
-print'<tr class="liste_titre">';
-print'<th class="sorting">';
+print'<tr>';
+print'<th>';
+print'</th>';
+$obj->aoColumns[$i]->mDataProp = "_id";
+$obj->aoColumns[$i]->bUseRendered = false;
+$obj->aoColumns[$i]->bSearchable = false;
+$obj->aoColumns[$i]->bVisible = false;
+$i++;
+print'<th class="essential">';
 print $langs->trans("Company");
 print'</th>';
-$obj->aoColumns[$i]->mDataProp = "name";
-$obj->aoColumns[$i]->sWidth = "20em";
+$obj->aoColumns[$i]->mDataProp = "ThirdPartyName";
 $obj->aoColumns[$i]->bUseRendered = true;
 $obj->aoColumns[$i]->bSearchable = true;
 $obj->aoColumns[$i]->fnRender= '%function(obj) {
 var ar = [];
-ar[ar.length] = $<a href=\"'.DOL_URL_ROOT.'/societe/soc.php?socid=$;
+ar[ar.length] = "<a href=\"'.DOL_URL_ROOT.'/societe/fiche.php?id=";
 ar[ar.length] = obj.aData._id;
-ar[ar.length] = $\"><img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/object_company.png\" border=\"0\" alt=\"Afficher mailing : $;
-ar[ar.length] = obj.aData.name.toString();
-ar[ar.length] = $\" title=\"Afficher soci&eacute;t&eacute;:$;
-ar[ar.length] = obj.aData.name.toString();
-ar[ar.length] = $\"></a> <a href=\"'.DOL_URL_ROOT.'/societe/soc.php?socid=$;
+ar[ar.length] = "\"><img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/16-Apartment-Building.png\" border=\"0\" alt=\"Afficher societe : ";
+ar[ar.length] = obj.aData.ThirdPartyName.toString();
+ar[ar.length] = "\" title=\"Afficher soci&eacute;t&eacute; : ";
+ar[ar.length] = obj.aData.ThirdPartyName.toString();
+ar[ar.length] = "\"></a> <a href=\"'.DOL_URL_ROOT.'/societe/fiche.php?id=";
 ar[ar.length] = obj.aData._id;
-ar[ar.length] = $\">$;
-ar[ar.length] = obj.aData.name.toString();
-ar[ar.length] = $</a>$;
+ar[ar.length] = "\">";
+ar[ar.length] = obj.aData.ThirdPartyName.toString();
+ar[ar.length] = "</a>";
 var str = ar.join("");
 return str;
 }%';
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans("Town");
 print'</th>';
-$obj->aoColumns[$i]->mDataProp = "town";
-$obj->aoColumns[$i]->sWidth = "7em";
-$obj->aoColumns[$i]->sClass = "center";
-$obj->aoColumns[$i]->fnRender= '%function(obj) {
-var str = obj.aData.town;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->mDataProp = "Town";
+$obj->aoColumns[$i]->sClass = "center edit";
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans("Zip");
 print'</th>';
-$obj->aoColumns[$i]->mDataProp = "zip";
-$obj->aoColumns[$i]->sClass = "right";
-$obj->aoColumns[$i]->fnRender = '%function(obj) {
-var str = obj.aData.zip;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->mDataProp = "Zip";
+$obj->aoColumns[$i]->sClass = "center";
+$obj->aoColumns[$i]->bVisible = false;
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-if (empty($conf->global->SOCIETE_DISABLE_STATE)) {
-    print'<th class="sorting">';
+/*if (empty($conf->global->SOCIETE_DISABLE_STATE)) {
+    print'<th class="essential">';
     print $langs->trans("State");
     print'</th>';
-}
+}*/
 if ($conf->categorie->enabled) {
-    print'<th class="sorting">';
+    print'<th class="essential">';
     print $langs->trans('Categories');
     print'</th>';
     $obj->aoColumns[$i]->mDataProp = "category";
-    $obj->aoColumns[$i]->fnRender = '%function(obj) {
-    var str = obj.aData.category;
-    if(typeof str === $undefined$)
-        str = null;
-        return str;
-    }%';
+    $obj->aoColumns[$i]->sDefaultContent = "";
+    $obj->aoColumns[$i]->sClass = "edit";
     $i++;
 }
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans('SalesRepresentatives');
 print'</th>';
-$obj->aoColumns[$i]->mDataProp = "commerciaux";
-$obj->aoColumns[$i]->fnRender = '%function(obj) {
-var str = obj.aData.commerciaux;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->mDataProp = "SalesRepresentatives";
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans('Siren');
 print'</th>';
 $obj->aoColumns[$i]->mDataProp = "idprof1";
-$obj->aoColumns[$i]->fnRender = '%function(obj) {
-var str = obj.aData.idprof1;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->bVisible = false;
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans('Ape');
 print'</th>';
 $obj->aoColumns[$i]->mDataProp = "idprof2";
-$obj->aoColumns[$i]->fnRender = '%function(obj) {
-var str = obj.aData.idprof2;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->bVisible = false;
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans("ProspectLevelShort");
 print'</th>';
 $obj->aoColumns[$i]->mDataProp = "potentiel";
-$obj->aoColumns[$i]->fnRender = '%function(obj) {
-var str = obj.aData.potentiel;
-if(typeof str === $undefined$)
-    str = null;
-    return str;
-}%';
+$obj->aoColumns[$i]->sDefaultContent = "";
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans("Status");
 print'</th>';
-$obj->aoColumns[$i]->mDataProp = "fk_stcomm";
+$obj->aoColumns[$i]->mDataProp = "Status";
 $obj->aoColumns[$i]->sClass = "center";
+$obj->aoColumns[$i]->sWidth = "100px";
+$obj->aoColumns[$i]->sDefaultContent = "ST_NEVER";
 $obj->aoColumns[$i]->fnRender = '%function(obj) {
 var status = new Array();
-var stcomm = obj.aData.fk_stcomm;
-if(typeof str === $undefined$)
-    stcomm = 0;
-status[0] = new Array($'.$langs->trans('MailingStatusDraft').'$,0);
-status[1] = new Array($'.$langs->trans('MailingStatusValidated').'$,1);
-status[2] = new Array($'.$langs->trans('MailingStatusSentPartialy').'$,3);
-status[3] = new Array($'.$langs->trans('MailingStatusSentCompletely').'$,6);
-var ar = [];
-ar[ar.length] = $<img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/statut$;
+var stcomm = obj.aData.Status;
+if(typeof stcomm === "undefined")
+    stcomm = "ST_NEVER";';
+foreach ($object->fk_status->values as $key => $aRow)
+{
+    $obj->aoColumns[$i]->fnRender.= 'status["'.$key.'"]= new Array("'.$langs->trans($aRow->label).'","'.$aRow->cssClass.'");';
+}
+$obj->aoColumns[$i]->fnRender.= 'var ar = [];
+ar[ar.length] = "<span class=\"lbl ";
 ar[ar.length] = status[stcomm][1];
-ar[ar.length] = $.png\" border=\"0\" alt=\"Afficher mailing : $;
-ar[ar.length] = $\" title=\"$;
+ar[ar.length] = " sl_status\">";
 ar[ar.length] = status[stcomm][0];
-ar[ar.length] = $\">$;
+ar[ar.length] = "</span>";
 var str = ar.join("");
 return str;
 }%';
 $i++;
-print'<th class="sorting">';
+print'<th class="essential">';
 print $langs->trans("Date");
 print'</th>';
 $obj->aoColumns[$i]->mDataProp = "tms";
 $obj->aoColumns[$i]->sType="date";
 $obj->aoColumns[$i]->sClass = "center";
+$obj->aoColumns[$i]->sWidth = "200px";
 $obj->aoColumns[$i]->fnRender = '%function(obj) {
 if(obj.aData.tms)
 {
@@ -302,44 +278,49 @@ else
 }%';
 print'</tr>';
 print'</thead>';
-print'<tbody class="contenu">';
-print'</tbody>';
-
-print $object->_datatables($obj,"#list");
-
-$i=0;
-
+print'<tfoot>';
 /* input search view */
-print'<tbody class="recherche">';
+$i=0;
 print'<tr>';
-print'<td id="'.$i.'"><input style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search Company") . '" class="inputSearch"/></td>';
+print'<th id="'.$i.'"></th>';
 $i++;
-print'<td id="'.$i.'"><input style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search Town") . '" class="inputSearch" /></td>';
+print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search Company") . '" /></th>';
 $i++;
-print'<td id="'.$i.'"><input  style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search Zip") . '" class="inputSearch" /></td>';
+print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search Town") . '" /></th>';
+$i++;
+print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search Zip") . '" /></th>';
 $i++;
 /*if(empty($conf->global->SOCIETE_DISABLE_STATE)) {
     print'<th></th>';
     $i++;
 }*/
 if ($conf->categorie->enabled) {
-        print'<td id="'.$i.'"><input  style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search category") . '" class="inputSearch" /></td>';
+        print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search category") . '" /></th>';
         $i++;
 }
-print'<td id="'.$i.'"><input  style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search sales") . '" class="inputSearch" /></td>';
+print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search sales") . '" /></th>';
 $i++;
-print'<td id="'.$i.'"><input  style="margin-top:1px;"  type="text" placeholder="' . $langs->trans("Search siren") . '" class="inputSearch" /></td>';
+print'<th id="'.$i.'"><input type="text" placeholder="' . $langs->trans("Search siren") . '" /></th>';
 $i++;
-print'<th></th>';
-$i++;   
-print'<th></th>';
+print'<th id="'.$i.'"></th>';
 $i++;
-print'<th></th>';
+print'<th id="'.$i.'"></th>';
 $i++;
-print'<th></th>';
+print'<th id="'.$i.'"></th>';
+$i++;
+print'<th id="'.$i.'"></th>';
+$i++;
 print'</tr>';
+print'</tfoot>';
+print'<tbody>';
 print'</tbody>';
+
 print "</table>";
+
+print $object->_datatables($obj,"societe",true,true);
+
+print end_box();
+print '</div>'; // end row
 
 llxFooter();
 ?>

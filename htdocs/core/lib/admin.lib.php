@@ -481,7 +481,6 @@ function dolibarr_set_const($db, $name, $value, $type='chaine', $visible=0, $not
 
         //print "sql".$value."-".pg_escape_string($value)."-".$sql;exit;
         //print "xx".$db->escape($value);
-        //print $sql;exit;
         dol_syslog("admin.lib::dolibarr_set_const sql=".$sql, LOG_DEBUG);
         $resql=$db->query($sql);
     }
@@ -846,9 +845,10 @@ function unActivateModule($value, $requiredby=1)
  * 	@param		array		&$tabfieldinsert	Tabfieldinsert
  * 	@param		array		&$tabrowid			Tabrowid
  * 	@param		array		&$tabcond			Tabcond
+ * 	@param		array		&$tabhelp			Tabhelp
  * 	@return		int			1
  */
-function complete_dictionnary_with_modules(&$taborder,&$tabname,&$tablib,&$tabsql,&$tabsqlsort,&$tabfield,&$tabfieldvalue,&$tabfieldinsert,&$tabrowid,&$tabcond)
+function complete_dictionnary_with_modules(&$taborder,&$tabname,&$tablib,&$tabsql,&$tabsqlsort,&$tabfield,&$tabfieldvalue,&$tabfieldinsert,&$tabrowid,&$tabcond,&$tabhelp)
 {
     global $db, $modules, $conf, $langs;
 
@@ -959,7 +959,8 @@ function complete_dictionnary_with_modules(&$taborder,&$tabname,&$tablib,&$tabsq
                                 foreach($objMod->dictionnaries['tabfieldinsert'] as $val) $tabfieldinsert[] = $val;
                                 foreach($objMod->dictionnaries['tabrowid'] as $val) $tabrowid[] = $val;
                                 foreach($objMod->dictionnaries['tabcond'] as $val) $tabcond[] = $val;
-                                //                                foreach($objMod->dictionnaries['tabsqlsort'] as $val) $tablib[] = $val;
+                                if (! empty($objMod->dictionnaries['tabhelp'])) foreach($objMod->dictionnaries['tabhelp'] as $val) $tabhelp[] = $val;
+                                //foreach($objMod->dictionnaries['tabsqlsort'] as $val) $tablib[] = $val;
                                 //$tabname = array_merge ($tabname, $objMod->dictionnaries['tabname']);
                                 //var_dump($tabcond);
                                 //exit;
@@ -1036,7 +1037,7 @@ function form_constantes($tableau)
             print '<input type="hidden" name="action" value="update">';
             print '<input type="hidden" name="rowid" value="'.$obj->rowid.'">';
             print '<input type="hidden" name="constname" value="'.$const.'">';
-            print '<input type="hidden" name="constnote" value="'.nl2br($obj->note).'">';
+            print '<input type="hidden" name="constnote" value="'.nl2br(dol_escape_htmltag($obj->note)).'">';
 
             print $langs->trans("Desc".$const) != ("Desc".$const) ? $langs->trans("Desc".$const) : ($obj->note?$obj->note:$const);
 
@@ -1079,9 +1080,9 @@ function form_constantes($tableau)
             {
                 print '<td>';
                 //print 'aa'.$const;
-                if (in_array($const,array('ADHERENT_CARD_TEXT','ADHERENT_CARD_TEXT_RIGHT')))
+                if (in_array($const,array('ADHERENT_CARD_TEXT','ADHERENT_CARD_TEXT_RIGHT','ADHERENT_ETIQUETTE_TEXT')))
                 {
-                    print '<textarea class="flat" name="constvalue" cols="35" rows="5" wrap="soft">'."\n";
+                    print '<textarea class="flat" name="constvalue" cols="50" rows="5" wrap="soft">'."\n";
                     print $obj->value;
                     print "</textarea>\n";
                     print '</td><td>';
@@ -1104,7 +1105,7 @@ function form_constantes($tableau)
                 }
                 else
                 {
-                    print '<input type="text" class="flat" size="48" name="constvalue" value="'.$obj->value.'">';
+                    print '<input type="text" class="flat" size="48" name="constvalue" value="'.dol_escape_htmltag($obj->value).'">';
                     print '</td><td>';
                     print '<input type="hidden" name="consttype" value="chaine">';
                 }
@@ -1133,15 +1134,15 @@ function form_constantes($tableau)
 function addDocumentModel($name, $type, $label='', $description='')
 {
 	global $db, $conf;
-	
+
 	$db->begin();
-	
+
     $sql = "INSERT INTO ".MAIN_DB_PREFIX."document_model (nom, type, entity, libelle, description)";
     $sql.= " VALUES ('".$db->escape($name)."','".$type."',".$conf->entity.", ";
     $sql.= ($label?"'".$db->escape($label)."'":'null').", ";
     $sql.= (! empty($description)?"'".$db->escape($description)."'":"null");
     $sql.= ")";
-    
+
     dol_syslog("admin.lib::addDocumentModel sql=".$sql);
 	$resql=$db->query($sql);
 	if ($resql)
@@ -1167,9 +1168,9 @@ function addDocumentModel($name, $type, $label='', $description='')
 function delDocumentModel($name, $type)
 {
 	global $db, $conf;
-	
+
 	$db->begin();
-	
+
 	$sql = "DELETE FROM ".MAIN_DB_PREFIX."document_model";
 	$sql.= " WHERE nom = '".$db->escape($name)."'";
 	$sql.= " AND type = '".$type."'";

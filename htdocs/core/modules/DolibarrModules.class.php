@@ -1033,97 +1033,85 @@ abstract class DolibarrModules
      */
     function insert_menus()
     {
-    	global $user;
+    	global $user, $conf;
 
         require_once(DOL_DOCUMENT_ROOT."/core/class/menubase.class.php");
 
         $err=0;
-
-        $this->db->begin();
+	if(count($this->menu)==0)
+	    return 0;
+	
+	$menus = array();
 
         //var_dump($this->menu); exit;
         foreach ($this->menu as $key => $value)
         {
-            $menu = new Menubase($this->db);
-            $menu->menu_handler='all';
-            $menu->module=$this->rights_class;
-            if (! $this->menu[$key]['fk_menu'])
+	    $id = $this->menu[$key]['_id'];
+	    
+            $menu[$id]->module=$this->rights_class;
+           
+	    if (empty($this->menu[$key]['_id']))
             {
-                $menu->fk_menu=0;
-                //print 'aaa'.$this->menu[$key]['fk_menu'];
-            }
-            else
+		$error ="ErrorBadDefinitionOfMenuArrayInModuleDescriptor (bad value for key _id)";
+		dol_print_error("",$error);
+		$err++;
+	    }
+	    
+	    if ($this->menu[$key]['type']!="top" && !empty($value['fk_menu']))
             {
-                //print 'xxx'.$this->menu[$key]['fk_menu'];exit;
-                $foundparent=0;
-                $fk_parent=$this->menu[$key]['fk_menu'];
-                if (preg_match('/r=/',$fk_parent))
-                {
-                    $fk_parent=str_replace('r=','',$fk_parent);
-                    if (isset($this->menu[$fk_parent]['rowid']))
-                    {
-                        $menu->fk_menu=$this->menu[$fk_parent]['rowid'];
-                        $foundparent=1;
-                    }
-                }
-                elseif (preg_match('/fk_mainmenu=(.*),fk_leftmenu=(.*)/',$fk_parent,$reg))
-                {
-                    $menu->fk_menu=-1;
-                    $menu->fk_mainmenu=$reg[1];
-                    $menu->fk_leftmenu=$reg[2];
-                    $foundparent=1;
-                }
-                elseif (preg_match('/fk_mainmenu=(.*)/',$fk_parent,$reg))
-                {
-                    $menu->fk_menu=-1;
-                    $menu->fk_mainmenu=$reg[1];
-                    $menu->fk_leftmenu='';
-                    $foundparent=1;
-                }
-                if (! $foundparent)
-                {
-                    $this->error="ErrorBadDefinitionOfMenuArrayInModuleDescriptor (bad value for key fk_menu)";
-                    dol_syslog(get_class($this)."::insert_menus ".$this->error." ".$this->menu[$key]['fk_menu'], LOG_ERR);
-                    $err++;
-                }
-            }
-            $menu->type=$this->menu[$key]['type'];
-            $menu->mainmenu=isset($this->menu[$key]['mainmenu'])?$this->menu[$key]['mainmenu']:(isset($menu->fk_mainmenu)?$menu->fk_mainmenu:'');
-            $menu->leftmenu=isset($this->menu[$key]['leftmenu'])?$this->menu[$key]['leftmenu']:'';
-            $menu->titre=$this->menu[$key]['titre'];
-            $menu->url=$this->menu[$key]['url'];
-            $menu->langs=$this->menu[$key]['langs'];
-            $menu->position=$this->menu[$key]['position'];
-            $menu->perms=$this->menu[$key]['perms'];
-            $menu->target=$this->menu[$key]['target'];
-            $menu->user=$this->menu[$key]['user'];
-            $menu->enabled=isset($this->menu[$key]['enabled'])?$this->menu[$key]['enabled']:0;
-
-            if (! $err)
-            {
-                $result=$menu->create($user);
-                if ($result > 0)
-                {
-                    $this->menu[$key]['rowid']=$result;
-                }
-                else
-                {
-                    $this->error=$menu->error;
-                    dol_syslog(get_class($this).'::insert_menus result='.$result." ".$this->error, LOG_ERR);
-                    $err++;
-                    break;
-                }
-            }
+		if(empty($menu[$value['fk_menu']]))
+		{
+		    try {
+			$conf->couchdb->getDoc($value['fk_menu']);
+		    } catch (Exception $e) {
+			$error ="ErrorBadDefinitionOfMenuArrayInModuleDescriptor (bad value for key fk_menu)";
+			$error.="<br>Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+			dol_print_error("",$error);
+			$err++;
+		    }
+		}
+	    }
+	    
+	    $menu[$id]->class="menu";
+            $menu[$id]->type=$this->menu[$key]['type'];
+            $menu[$id]->title=$this->menu[$key]['titre'];
+            $menu[$id]->url=$this->menu[$key]['url'];
+            $menu[$id]->langs=$this->menu[$key]['langs'];
+            $menu[$id]->position=(int)$this->menu[$key]['position'];
+            $menu[$id]->perms=$this->menu[$key]['perms'];
+            $menu[$id]->target=$this->menu[$key]['target'];
+            $menu[$id]->user=$this->menu[$key]['user'];
+            $menu[$id]->enabled=isset($this->menu[$key]['enabled'])?$this->menu[$key]['enabled']:0;
+	    if($this->menu[$key]['fk_menu'])
+		$menu[$id]->fk_menu=$this->menu[$key]['fk_menu'];
+	    $menu[$id]->_id=$this->menu[$key]['_id'];
+	    
+	    // for update
+	    try {
+		    $obj = $conf->couchdb->getDoc($id);
+		    $menu[$id]->_rev = $obj->_rev;
+		} catch (Exception $e) {
+		    
+		}
+		//print_r($menu);
         }
+	
+	//print_r($menu);exit;
 
         if (! $err)
         {
-            $this->db->commit();
+            try {
+		$conf->couchdb->clean($menu);
+		$conf->couchdb->storeDocs($menu,false);
+	    } catch (Exception $e) {
+		$error = "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+		dol_print_error("", $error);
+		exit(1);
+	    }
         }
         else
         {
             dol_syslog(get_class($this)."::insert_menus ".$this->error, LOG_ERR);
-            $this->db->rollback();
         }
 
         return $err;
@@ -1138,21 +1126,26 @@ abstract class DolibarrModules
     function delete_menus()
     {
         global $conf;
-
-        $err=0;
-
-        $sql = "DELETE FROM ".MAIN_DB_PREFIX."menu";
-        $sql.= " WHERE module = '".$this->db->escape($this->rights_class)."'";
-        $sql.= " AND entity = ".$conf->entity;
-
-        dol_syslog(get_class($this)."::delete_menus sql=".$sql);
-        $resql=$this->db->query($sql);
-        if (! $resql)
+	
+	require_once(DOL_DOCUMENT_ROOT."/core/class/menubase.class.php");
+	
+	$menu = new Menubase($this->db);
+	$err=0;
+	
+	foreach ($this->menu as $key => $value)
         {
-            $this->error=$this->db->lasterror();
-            dol_syslog(get_class($this)."::delete_menus ".$this->error, LOG_ERR);
-            $err++;
-        }
+	    try {
+	    	$menu->load($value['_id']);
+		
+		$menu->enabled = false;
+		$menu->record();
+	    } catch (Exception $e) {
+		$error ="ErrorBadDefinitionOfMenuArrayInModuleDescriptor (bad value for key fk_menu)";
+		$error.="<br>Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+		dol_print_error("",$error);
+		exit;
+	    }
+	}
 
         return $err;
     }

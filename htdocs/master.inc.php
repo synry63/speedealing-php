@@ -41,6 +41,10 @@ require_once("filefunc.inc.php");	// May have been already require by main.inc.p
 require_once(DOL_DOCUMENT_ROOT."/core/class/conf.class.php");
 
 $conf = new Conf();
+// Identifiant propres au serveur couchdb
+$conf->couchdb->host					= $dolibarr_main_couchdb_host;
+$conf->couchdb->port					= $dolibarr_main_couchdb_port;
+$conf->couchdb->name					= $dolibarr_main_couchdb_name;
 // Identifiant propres au serveur base de donnee
 $conf->db->host							= $dolibarr_main_db_host;
 $conf->db->port							= $dolibarr_main_db_port;
@@ -138,8 +142,15 @@ if (! defined('NOREQUIREDB'))
 	{
 		$conf->entity = GETPOST("entity",'int');
 	}
+	else if (defined('DOLENTITY') && is_int(DOLENTITY))				// For public page with MultiCompany module
+	{
+		$conf->entity = DOLENTITY;
+	}
 
 	//print "Will work with data into entity instance number '".$conf->entity."'";
+	
+	// CouchDB
+	$conf->couchdb = new couchClient($conf->couchdb->host.':'.$conf->couchdb->port.'/',$conf->couchdb->name);
 
 	// Here we read database (llx_const table) and define $conf->global->XXX var.
 	$conf->setValues($db);
@@ -190,7 +201,7 @@ if (! empty($conf->global->MAIN_ONLY_LOGIN_ALLOWED))
 if (! defined('NOREQUIREDB') && ! defined('NOREQUIRESOC'))
 {
 	require_once(DOL_DOCUMENT_ROOT ."/societe/class/societe.class.php");
-	$mysoc=new Societe($couch);
+	$mysoc=new Societe($conf->couchdb);
 
 	$mysoc->id=0;
 	$mysoc->nom=$conf->global->MAIN_INFO_SOCIETE_NOM; 			// TODO deprecated
@@ -236,6 +247,8 @@ if (! defined('NOREQUIREDB') && ! defined('NOREQUIRESOC'))
 	$mysoc->idprof2=empty($conf->global->MAIN_INFO_SIRET)?'':$conf->global->MAIN_INFO_SIRET;
 	$mysoc->idprof3=empty($conf->global->MAIN_INFO_APE)?'':$conf->global->MAIN_INFO_APE;
 	$mysoc->idprof4=empty($conf->global->MAIN_INFO_RCS)?'':$conf->global->MAIN_INFO_RCS;
+	$mysoc->idprof5=empty($conf->global->MAIN_INFO_PROFID5)?'':$conf->global->MAIN_INFO_PROFID5;
+	$mysoc->idprof6=empty($conf->global->MAIN_INFO_PROFID6)?'':$conf->global->MAIN_INFO_PROFID6;
 	$mysoc->tva_intra=$conf->global->MAIN_INFO_TVAINTRA;	// VAT number, not necessarly INTRA.
 	$mysoc->idtrainer=empty($conf->global->MAIN_INFO_TRAINER)?'':$conf->global->MAIN_INFO_TRAINER;
 	$mysoc->capital=$conf->global->MAIN_INFO_CAPITAL;

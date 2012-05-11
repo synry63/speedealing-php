@@ -629,7 +629,8 @@ if (! empty($conf->global->MAIN_DISABLE_CONTACTS_TAB))
 
 		if ($result > 0 && $id > 0)
 		{
-			$result = $object->add_contact(GETPOST('contactid','int'), GETPOST('type','int'), GETPOST('source','alpha'));
+			$contactid = (GETPOST('userid','int') ? GETPOST('userid','int') : GETPOST('contactid','int'));
+			$result = $object->add_contact($contactid, GETPOST('type','int'), GETPOST('source','alpha'));
 		}
 
 		if ($result >= 0)
@@ -1097,7 +1098,8 @@ else if ($id > 0 || ! empty($ref))
 
             // Date intervention
             print '<td align="center" nowrap="nowrap">';
-            $timearray=dol_getdate(mktime());
+            $now=dol_now();
+            $timearray=dol_getdate($now);
             if (!GETPOST('diday','int')) $timewithnohour=dol_mktime(0,0,0,$timearray['mon'],$timearray['mday'],$timearray['year']);
             else $timewithnohour=dol_mktime(GETPOST('dihour','int'),GETPOST('dimin','int'),GETPOST('disec','int'),GETPOST('dimonth','int'),GETPOST('diday','int'),GETPOST('diyear','int'));
             $form->select_date($timewithnohour,'di',1,1,0,"addinter");

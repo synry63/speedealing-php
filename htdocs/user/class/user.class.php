@@ -89,7 +89,7 @@ class User extends CommonObject
 	private $_tab_loaded=array();		// Array of cache of already loaded permissions
 
 	var $conf;           // To store personal config
-	var $oldcopy;        // To contains a clone of this when we need to save old properties of object
+	var $oldcopy;                // To contains a clone of this when we need to save old properties of object
 
 
 
@@ -109,6 +109,7 @@ class User extends CommonObject
 		$this->all_permissions_are_loaded = 0;
 		$this->admin=0;
 
+		$this->conf				    = (object) array();
 		$this->rights				= (object) array();
 		$this->rights->user			= (object) array();
 		$this->rights->user->user	= (object) array();
@@ -506,7 +507,7 @@ class User extends CommonObject
 		$sql.= " FROM ".MAIN_DB_PREFIX."user_rights as ur";
 		$sql.= ", ".MAIN_DB_PREFIX."rights_def as r";
 		$sql.= " WHERE r.id = ur.fk_id";
-		$sql.= " AND r.entity in (0,".(!empty($conf->multicompany->transverse_mode)?"1,":"").$conf->entity.")";
+		$sql.= " AND r.entity IN (0,".(!empty($conf->multicompany->transverse_mode)?"1,":"").$conf->entity.")";
 		$sql.= " AND ur.fk_user= ".$this->id;
 		$sql.= " AND r.perms IS NOT NULL";
 		if ($moduletag) $sql.= " AND r.module = '".$this->db->escape($moduletag)."'";
@@ -527,16 +528,12 @@ class User extends CommonObject
 
 				if ($perms)
 				{
+					if (! is_object($this->rights)) $this->rights = (object) array(); // For avoid error
 					if (! is_object($this->rights->$module)) $this->rights->$module = (object) array();
-					if (! is_object($this->rights->$module->$perms)) $this->rights->$module->$perms = (object) array();
 					if ($subperms)
 					{
-						if (! isset($this->rights->$module) ||
-						(is_object($this->rights->$module) && ! isset($this->rights->$module->$perms)) ||
-						(is_object($this->rights->$module->$perms)) )
-						{
-							$this->rights->$module->$perms->$subperms = 1;
-						}
+						if (! is_object($this->rights->$module->$perms)) $this->rights->$module->$perms = (object) array();
+						$this->rights->$module->$perms->$subperms = 1;
 					}
 					else
 					{
@@ -592,7 +589,7 @@ class User extends CommonObject
 			}
 			$this->db->free($resql);
 		}
-		
+
 		// For backward compatibility
 		if (isset($this->rights->propale))
 		{
@@ -938,12 +935,12 @@ class User extends CommonObject
 
 		// Positionne parametres
 		$this->admin = 0;
-		$this->nom = $member->nom;
-		$this->prenom = $member->prenom;
+		$this->lastname = $member->lastname;
+		$this->firstname = $member->firstname;
 		$this->email = $member->email;
 		$this->pass = $member->pass;
 
-		if (empty($login)) $login=strtolower(substr($member->prenom, 0, 4)) . strtolower(substr($member->nom, 0, 4));
+		if (empty($login)) $login=strtolower(substr($member->firstname, 0, 4)) . strtolower(substr($member->lastname, 0, 4));
 		$this->login = $login;
 
 		$this->db->begin();
@@ -1047,8 +1044,8 @@ class User extends CommonObject
 		dol_syslog(get_class($this)."::update notrigger=".$notrigger.", nosyncmember=".$nosyncmember.", nosyncmemberpass=".$nosyncmemberpass);
 
 		// Clean parameters
-		$this->nom          = trim($this->nom);		// TODO deprecated
-		$this->prenom       = trim($this->prenom);  // TODO deprecated
+		$this->nom          = trim($this->nom);		// deprecated
+		$this->prenom       = trim($this->prenom);  // deprecated
 		$this->lastname     = trim($this->lastname);
 		$this->firstname    = trim($this->firstname);
 		$this->login        = trim($this->login);
@@ -1142,8 +1139,10 @@ class User extends CommonObject
 
 					if ($result >= 0)
 					{
-						$adh->prenom=$this->firstname;
-						$adh->nom=$this->lastname;
+						$adh->prenom=$this->firstname;    // deprecated
+						$adh->nom=$this->lastname;        // deprecated
+						$adh->firstname=$this->firstname;
+						$adh->lastname=$this->lastname;
 						$adh->login=$this->login;
 						$adh->pass=$this->pass;
 						$adh->societe=(empty($adh->societe) && $this->societe_id ? $this->societe_id : $adh->societe);
@@ -1449,7 +1448,7 @@ class User extends CommonObject
             '',
             0,
             $msgishtml
-		);
+        );
 
 		if ($mailfile->sendfile())
 		{

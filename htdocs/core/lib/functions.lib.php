@@ -609,7 +609,7 @@ function dol_fiche_head($links=array(), $active='0', $title='', $notab=0, $picto
  */
 function dol_get_fiche_head($links=array(), $active='0', $title='', $notab=0, $picto='')
 {
-    $out="\n".'<div class="tabs">'."\n";
+    $out="\n".'<div>'."\n";
 
     // Affichage titre
     if ($title)
@@ -674,6 +674,8 @@ function dol_get_fiche_head($links=array(), $active='0', $title='', $notab=0, $p
 function dol_fiche_end($notab=0)
 {
     print dol_get_fiche_end($notab);
+    print end_box();
+    print '</div>';
 }
 
 /**
@@ -1076,7 +1078,7 @@ function dol_print_url($url,$target='_blank',$max=32)
     if (! preg_match('/^http/i',$url)) $link.='http://';
     $link.=$url;
     if ($target) $link.='" target="'.$target.'">';
-    if (! preg_match('/^http/i',$url)) $link.='http://';
+    //if (! preg_match('/^http/i',$url)) $link.='http://';
     $link.=dol_trunc($url,$max);
     $link.='</a>';
     return $link;
@@ -1099,7 +1101,7 @@ function dol_print_email($email,$cid=0,$socid=0,$addlink=0,$max=64,$showinvalid=
 
     $newemail=$email;
 
-    if (empty($email)) return '&nbsp;';
+    if (empty($email)) return '';
 
     if (! empty($addlink))
     {
@@ -1144,9 +1146,12 @@ function dol_print_email($email,$cid=0,$socid=0,$addlink=0,$max=64,$showinvalid=
  * 	@param 	string	$separ 		separation between numbers for a better visibility example : xx.xx.xx.xx.xx
  * 	@return string 				Formated phone number
  */
-function dol_print_phone($phone,$country="FR",$cid=0,$socid=0,$addlink=0,$separ="&nbsp;")
+function dol_print_phone($phone,$country="FR",$cid=0,$socid=0,$addlink=0,$separ=" ")
 {
     global $conf,$user,$langs;
+    
+    if(empty($phone))
+        return null;
 
     // Clean phone parameter
     $phone = preg_replace("/[\s.-]/","",trim($phone));
@@ -1289,10 +1294,12 @@ function dol_user_country()
 function dol_print_address($address, $htmlid, $mode, $id)
 {
     global $conf,$user,$langs;
+    
+    $rtr = "";
 
     if ($address)
     {
-        print nl2br($address);
+        $rtr.= nl2br($address);
         $showmap=0;
         if ($mode=='thirdparty' && $conf->google->enabled && $conf->global->GOOGLE_ENABLE_GMAPS) $showgmap=1;
         if ($mode=='contact' && $conf->google->enabled && $conf->global->GOOGLE_ENABLE_GMAPS_CONTACTS) $showgmap=1;
@@ -1305,14 +1312,16 @@ function dol_print_address($address, $htmlid, $mode, $id)
         if ($showgmap)
         {
             $url=dol_buildpath('/google/gmaps.php?mode='.$mode.'&id='.$id,1);
-            print ' <a href="'.$url.'" target="_gmaps"><img id="'.$htmlid.'" border="0" src="'.DOL_URL_ROOT.'/theme/common/gmap.png"></a>';
+            $rtr.= ' <a href="'.$url.'" target="_gmaps"><img id="'.$htmlid.'" border="0" src="'.DOL_URL_ROOT.'/theme/common/gmap.png"></a>';
         }
         if ($showomap)
         {
             $url=dol_buildpath('/openstreetmap/maps.php?mode='.$mode.'&id='.$id,1);
-            print ' <a href="'.$url.'" target="_gmaps"><img id="'.$htmlid.'_openstreetmap" border="0" src="'.DOL_URL_ROOT.'/theme/common/gmap.png"></a>';
+            $rtr.= ' <a href="'.$url.'" target="_gmaps"><img id="'.$htmlid.'_openstreetmap" border="0" src="'.DOL_URL_ROOT.'/theme/common/gmap.png"></a>';
         }
     }
+    
+    return $rtr;
 }
 
 
@@ -1782,7 +1791,7 @@ function img_edit($alt = "default", $float=0, $other='')
 {
     global $conf,$langs;
     if ($alt=="default") $alt=$langs->trans("Modify");
-    $img='<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/edit.png" border="0" alt="'.dol_escape_htmltag($alt).'" title="'.dol_escape_htmltag($alt).'"';
+    $img='<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/pencil_gray.png" border="0" alt="'.dol_escape_htmltag($alt).'" title="'.dol_escape_htmltag($alt).'"';
     if ($float) $img.=' style="float: right"';
     if ($other) $img.=' '.$other;
     $img.='>';
@@ -1819,7 +1828,11 @@ function img_delete($alt = "default", $other='')
 {
     global $conf,$langs;
     if ($alt=="default") $alt=$langs->trans("Delete");
-    return img_picto($alt,'delete.png',$other);
+    $img='<img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/trashcan_gray.png" border="0" alt="'.dol_escape_htmltag($alt).'" title="'.dol_escape_htmltag($alt).'"';
+    if ($float) $img.=' style="float: right"';
+    if ($other) $img.=' '.$other;
+    $img.='>';
+    return $img;
 }
 
 
@@ -2052,7 +2065,7 @@ function info_admin($text,$infoonimgalt=0)
     }
     else
     {
-        $s.='<div class="info">';
+        $s.='<div class="alert-box warning">';
         $s.=img_picto($langs->trans("InfoAdmin"),'star');
         $s.=' ';
         $s.=$text;
@@ -2190,7 +2203,8 @@ function dol_print_error_email()
     global $langs,$conf;
 
     $langs->load("errors");
-    print '<br><div class="error">'.$langs->trans("ErrorContactEMail",$conf->global->MAIN_INFO_SOCIETE_MAIL,'ERRORNEWPAYMENT'.dol_print_date(mktime(),'%Y%m%d')).'</div>';
+    $now=dol_now();
+    print '<br><div class="error">'.$langs->trans("ErrorContactEMail",$conf->global->MAIN_INFO_SOCIETE_MAIL,'ERRORNEWPAYMENT'.dol_print_date($now,'%Y%m%d')).'</div>';
 }
 
 /**
@@ -2283,6 +2297,60 @@ function getTitleFieldOfList($name, $thead=0, $file="", $field="", $begin="", $m
 }
 
 /**
+ *	Start a box
+ *
+ *	@param	string	$title			Title of the box
+ *	@param	string	$nbcolumn		Number of column see style.css
+ *	@param	array	$head                   list of top menu on box
+ *	@param	boolean	$box_action             Enable or Disable buttons reduse and delete box
+ *	@return	string				Title to show
+ */
+function start_box($title,$nbcolumn='twelve',$icon='16-Abacus.png',$box_action=true,$isForms=false,$head=null)
+{
+    global $conf,$langs;
+    
+    $rtr = '<div class="'.$nbcolumn.' columns">';
+    $rtr.= '<div class="box_c">';
+    if($box_action && empty($head))
+        $rtr.= '<div class="box_c_heading cf box_actions">';
+    else
+        $rtr.= '<div class="box_c_heading cf">';
+    $rtr.= '<div class="box_c_ico"><img src="'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/ico/icSw2/'.$icon.'" alt="" /></div>';
+    $rtr.= '<p>'.$title.'</p>';
+    
+    // See menu on top box
+    if(!empty($head))
+    {
+        $rtr.='<ul class="tabs cf right">';
+        foreach ($head as $aRow)
+        {
+            $rtr.='<li><a href="#">'.$aRow[1].'</a></li>';
+        }
+        $rtr.='</ul>';
+    }
+    $rtr.= '</div>';
+    if($isForms)
+        $rtr.= '<div class="box_c_content form_a">';
+    else
+    $rtr.= '<div class="box_c_content">';
+    return $rtr;
+}
+
+/**
+ *	End of a box
+ *
+ *	@return	string					Title to show
+ */
+function end_box()
+{
+    $rtr = '</div>';//end content box
+    $rtr.= '</div>';//end box
+    $rtr.= '</div>';//end columns
+    return $rtr;
+}
+
+
+/**
  *	Show a title (deprecated. use print_fiche_titre instrad)
  *
  *	@param	string	$title			Title to show
@@ -2305,7 +2373,13 @@ function print_titre($title)
  */
 function print_fiche_titre($titre, $mesg='', $picto='title.png', $pictoisfullpath=0, $id='')
 {
-    print load_fiche_titre($titre, $mesg, $picto, $pictoisfullpath, $id);
+    print '<div class="row">';
+    print start_box($titre,"twelve","16-Apartment-Building.png");
+    //print load_fiche_titre($titre, $mesg, $picto, $pictoisfullpath, $id);
+    //print '</div>';
+    //print '</div>';
+    //print '<div class="row">';
+    //print '<div class="tweelve columns">';
 }
 
 /**
@@ -2682,9 +2756,8 @@ function get_localtax($tva, $local, $societe_acheteuse="")
 {
     global $db, $conf, $mysoc;
 
-    // TODO Can we uncomment this ?
-    //if ($local == 1 && empty($conf->global->FACTURE_LOCAL_TAX1_OPTION)) return;
-    //if ($local == 2 && empty($conf->global->FACTURE_LOCAL_TAX2_OPTION)) return;
+    if ($local == 1 && ! $mysoc->localtax1_assuj) return 0;
+    if ($local == 2 && ! $mysoc->localtax2_assuj) return 0;
 
     $code_pays=$mysoc->pays_code;
 
@@ -2716,12 +2789,13 @@ function get_localtax($tva, $local, $societe_acheteuse="")
  *	Return vat rate of a product in a particular selling country or default country
  *  vat if product is unknown
  *
- *  @param	int		$idprod          Id of product or 0 if not a predefined product
- *  @param  string	$countrycode     Country code (FR, US, IT, ...)
- *  @return int				         <0 if KO, Vat rate if OK
+ *  @param	int			$idprod          	Id of product or 0 if not a predefined product
+ *  @param  Societe		$thirdparty_seller  Thirdparty with a ->country_code defined (FR, US, IT, ...)
+ *	@param	int			$idprodfournprice	Id product_fournisseur_price (for supplier order/invoice)
+ *  @return int					         	<0 if KO, Vat rate if OK
  *	TODO May be this should be better as a method of product class
  */
-function get_product_vat_for_country($idprod, $countrycode)
+function get_product_vat_for_country($idprod, $thirdparty_seller, $idprodfournprice=0)
 {
     global $db,$mysoc;
 
@@ -2734,9 +2808,17 @@ function get_product_vat_for_country($idprod, $countrycode)
         $product=new Product($db);
         $result=$product->fetch($idprod);
 
-        if ($mysoc->pays_code == $countrycode) // If selling country is ours
+        if ($mysoc->pays_code == $thirdparty_seller->country_code) // If selling country is ours
         {
-            $ret=$product->tva_tx;    // Default vat of product we defined
+            if ($idprodfournprice > 0)     // We want vat for product for a supplier order or invoice
+            {
+                $product->get_buyprice($idprodfournprice,0,0,0);
+                $ret=$product->vatrate_supplier;
+            }
+            else
+            {
+                $ret=$product->tva_tx;    // Default vat of product we defined
+            }
             $found=1;
         }
         else
@@ -2752,7 +2834,7 @@ function get_product_vat_for_country($idprod, $countrycode)
         // If vat of product for the country not found or not defined, we return higher vat of country.
         $sql.="SELECT taux as vat_rate";
         $sql.=" FROM ".MAIN_DB_PREFIX."c_tva as t, ".MAIN_DB_PREFIX."c_pays as p";
-        $sql.=" WHERE t.active=1 AND t.fk_pays = p.rowid AND p.code='".$countrycode."'";
+        $sql.=" WHERE t.active=1 AND t.fk_pays = p.rowid AND p.code='".$thirdparty_seller->country_code."'";
         $sql.=" ORDER BY t.taux DESC, t.recuperableonly ASC";
         $sql.=$db->plimit(1);
 
@@ -2806,16 +2888,17 @@ function get_product_localtax_for_country($idprod, $local, $countrycode)
  *	@param	Societe		$societe_vendeuse    	Objet societe vendeuse
  *	@param  Societe		$societe_acheteuse   	Objet societe acheteuse
  *	@param  int			$idprod					Id product
+ *	@param	int			$idprodfournprice		Id product_fournisseur_price (for supplier order/invoice)
  *	@return float         				      	Taux de tva a appliquer, -1 si ne peut etre determine
  */
-function get_default_tva($societe_vendeuse, $societe_acheteuse, $idprod=0)
+function get_default_tva($societe_vendeuse, $societe_acheteuse, $idprod=0, $idprodfournprice=0)
 {
     global $conf;
 
     if (!is_object($societe_vendeuse)) return -1;
     if (!is_object($societe_acheteuse)) return -1;
 
-    dol_syslog("get_default_tva: seller use vat=".$societe_vendeuse->tva_assuj.", seller country=".$societe_vendeuse->pays_code.", seller in cee=".$societe_vendeuse->isInEEC().", buyer country=".$societe_acheteuse->pays_code.", buyer in cee=".$societe_acheteuse->isInEEC().", idprod=".$idprod.", SERVICE_ARE_ECOMMERCE_200238EC=".$conf->global->SERVICES_ARE_ECOMMERCE_200238EC);
+    dol_syslog("get_default_tva: seller use vat=".$societe_vendeuse->tva_assuj.", seller country=".$societe_vendeuse->pays_code.", seller in cee=".$societe_vendeuse->isInEEC().", buyer country=".$societe_acheteuse->pays_code.", buyer in cee=".$societe_acheteuse->isInEEC().", idprod=".$idprod.", idprodfournprice=".$idprodfournprice.", SERVICE_ARE_ECOMMERCE_200238EC=".$conf->global->SERVICES_ARE_ECOMMERCE_200238EC);
 
     // Si vendeur non assujeti a TVA (tva_assuj vaut 0/1 ou franchise/reel)
     if (is_numeric($societe_vendeuse->tva_assuj) && ! $societe_vendeuse->tva_assuj)
@@ -2833,10 +2916,11 @@ function get_default_tva($societe_vendeuse, $societe_acheteuse, $idprod=0)
     // Le test ci-dessus ne devrait pas etre necessaire. Me signaler l'exemple du cas juridique concerne si le test suivant n'est pas suffisant.
 
     // Si le (pays vendeur = pays acheteur) alors la TVA par defaut=TVA du produit vendu. Fin de regle.
-    if ($societe_vendeuse->country_code == $societe_acheteuse->country_code) // Warning ->country_code not always defined
+    if (($societe_vendeuse->country_code == $societe_acheteuse->country_code)
+    || (in_array($societe_vendeuse->country_code,array('FR,MC')) && in_array($societe_acheteuse->country_code,array('FR','MC')))) // Warning ->country_code not always defined
     {
         //print 'VATRULE 3';
-        return get_product_vat_for_country($idprod,$societe_vendeuse->country_code);
+        return get_product_vat_for_country($idprod,$societe_vendeuse,$idprodfournprice);
     }
 
     // Si (vendeur et acheteur dans Communaute europeenne) et (bien vendu = moyen de transports neuf comme auto, bateau, avion) alors TVA par defaut=0 (La TVA doit etre paye par l'acheteur au centre d'impots de son pays et non au vendeur). Fin de regle.
@@ -2855,7 +2939,7 @@ function get_default_tva($societe_vendeuse, $societe_acheteuse, $idprod=0)
         else
         {
             //print 'VATRULE 5';
-            return get_product_vat_for_country($idprod,$societe_vendeuse->country_code);
+            return get_product_vat_for_country($idprod,$societe_vendeuse,$idprodfournprice);
         }
     }
 
@@ -2867,7 +2951,7 @@ function get_default_tva($societe_vendeuse, $societe_acheteuse, $idprod=0)
         if (! $societe_vendeuse->isInEEC() && $societe_acheteuse->isInEEC() && ! $societe_acheteuse->isACompany())
         {
             //print 'VATRULE 6';
-            return get_product_vat_for_country($idprod,$societe_acheteuse->country_code);
+            return get_product_vat_for_country($idprod,$societe_acheteuse,$idprodfournprice);
         }
     }
 
@@ -2949,7 +3033,7 @@ function yn($yesno, $case=1, $color=0)
         if ($color == 2) $classname='ok';
         else $classname='error';
     }
-    if ($color) return '<font class="'.$classname.'">'.$result.'</font>';
+    if ($color) return $result;
     return $result;
 }
 
@@ -3361,7 +3445,7 @@ function complete_substitutions_array(&$substitutionarray,$outputlangs,$object='
     require_once(DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php');
 
     // Check if there is external substitution to do asked by plugins
-    $dirsubstitutions=array_merge(array(),$conf->substitutions_modules);
+    $dirsubstitutions=array_merge(array(),$conf->modules_parts['substitutions']);
 
     foreach($dirsubstitutions as $reldir)
     {

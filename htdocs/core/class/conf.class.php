@@ -39,6 +39,8 @@ class Conf
 	var $db;
 	//! To store properties found into database
 	var $global;
+	//! url of couchdb server
+	var $couchdb;
 
 	//! To store if javascript/ajax is enabked
 	public $use_javascript_ajax;
@@ -52,18 +54,18 @@ class Conf
 	public $smart_menu;
 
 	public $modules					= array();	// List of activated modules
-	public $modules_parts			= array();	// List of modules parts
+	public $modules_parts			= array('triggers'=>array(),'login'=>array(),'substitutions'=>array(),'menus'=>array(),'theme'=>array(),'tpl'=>array(),'barcode'=>array(),'models'=>array());	// List of modules parts
 
 	// TODO Remove all thoose tabs with one generic
+	public $triggers_modules		= array();
+	public $login_modules			= array();
+	public $substitutions_modules	= array();
+	public $menus_modules			= array();
+	public $barcode_modules			= array();
 	public $sms_engine_modules		= array();
 	public $css_modules				= array();
 	public $tabs_modules			= array();
-	public $triggers_modules		= array();
-	public $menus_modules			= array();
 	public $hooks_modules			= array();
-	public $login_modules			= array();
-	public $barcode_modules			= array();
-	public $substitutions_modules	= array();
 	public $societe_modules	        = array();
 
 	var $logbuffer					= array();
@@ -87,6 +89,7 @@ class Conf
 		// Avoid warnings when filling this->xxx
 		$this->file				= (object) array();
 		$this->db				= (object) array();
+		$this->couchdb			= (object) array();
 		$this->global			= (object) array();
 		$this->mycompany		= (object) array();
 		$this->admin			= (object) array();
@@ -189,7 +192,7 @@ class Conf
 							if (! isset($this->modules_parts[$partname]) || ! is_array($this->modules_parts[$partname])) { $this->modules_parts[$partname] = array(); }
 							$arrValue = json_decode($value,true);
 							if (is_array($arrValue) && ! empty($arrValue)) $value = $arrValue;
-							else if (in_array($partname,array('login','menus','substitutions','triggers'))) $value = '/'.$modulename.'/core/'.$partname.'/';
+							else if (in_array($partname,array('login','menus','substitutions','triggers','tpl','theme'))) $value = '/'.$modulename.'/core/'.$partname.'/';
 							else if (in_array($partname,array('models'))) $value = '/'.$modulename.'/';
 							else if ($value == 1) $value = '/'.$modulename.'/core/modules/'.$partname.'/';
 							$this->$varname = array_merge($this->$varname, array($modulename => $value));  // TODO deprecated
@@ -442,6 +445,7 @@ class Conf
         {
         	if (is_object($mc)) $mc->setValues($this);
         }
+        
 	}
 }
 

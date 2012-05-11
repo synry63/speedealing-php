@@ -60,7 +60,8 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 	/**
 	 *	Constructor
 	 *
-	 *  @param		DoliDB		$db      Database handler
+	 *  @param	DoliDB		$db      	Database handler
+	 *  @param	Object		$object		Supplier order
 	 */
 	function __construct($db,$object)
 	{
@@ -98,7 +99,10 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 		$this->franchise=!$mysoc->tva_assuj;
 
         // Get source company
-        $this->emetteur=$mysoc;
+        //if (! is_object($object->thirdparty)) $object->fetch_thirdparty();
+        //$this->emetteur=$object->thirdparty;
+        //if (! $this->emetteur->country_code) $this->emetteur->country_code=substr($langs->defaultlang,-2);    // By default, if was not defined
+		$this->emetteur=$mysoc;
         if (! $this->emetteur->country_code) $this->emetteur->country_code=substr($langs->defaultlang,-2);    // By default, if was not defined
 
 		// Defini position des colonnes
@@ -478,14 +482,14 @@ class pdf_muscadet extends ModelePDFSuppliersOrders
 	    $pdf->SetFont('','', $default_font_size - 1);
 
 	    // If France, show VAT mention if not applicable
-	    if ($this->emetteur->pays_code == 'FR' && $this->franchise == 1)
+	    /*if ($this->emetteur->pays_code == 'FR' && $this->franchise == 1)
 	    {
 	        $pdf->SetFont('','B', $default_font_size - 2);
 	        $pdf->SetXY($this->marge_gauche, $posy);
 	        $pdf->MultiCell(100, 3, $outputlangs->transnoentities("VATIsNotUsedForInvoice"), 0, 'L', 0);
 
 	        $posy=$pdf->GetY()+4;
-	    }
+	    }*/
 
 	    // Show payments conditions
 	    if ($object->cond_reglement_code || $object->cond_reglement)
