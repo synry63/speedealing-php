@@ -2852,9 +2852,18 @@ abstract class CommonObject extends couchDocument
             
             // jeditable
             $obj->fnDrawCallback= '%function () {
+            columns = ["operateur","datetime","tracking","codemouv","reference","serie","emplacement","check"];
             $("#'.$ref_css.' tbody td.edit").editable( "'.$_SERVER['PHP_SELF'].'?json=edit", {
                 "callback": function( sValue, y ) {
                     oTable.fnDraw();
+                },
+                "submitdata":function (obj) {
+                    var posi = oTable.fnGetPosition(this);
+                    var idrow = oTable.fnGetData(posi[0],0);
+                                                return {
+                                                            "idrow": idrow,
+                                                            "column": columns[posi[1]]                                                      
+                                                    };
                 },
                 "height": "14px",
                 "tooltip": "Cliquer pour éditer...",
