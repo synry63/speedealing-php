@@ -2850,29 +2850,30 @@ abstract class CommonObject extends couchDocument
             // Sans export
             //$obj->sDom = 'Cl<fr>t<\"clear\"rtip>';
             
-            // jeditable
-            $obj->fnDrawCallback= '%function () {
-            columns = ["operateur","datetime","tracking","codemouv","reference","serie","emplacement","check"];
-            $("#'.$ref_css.' tbody td.edit").editable( "'.$_SERVER['PHP_SELF'].'?json=edit", {
-                "callback": function( sValue, y ) {
-                    oTable.fnDraw();
-                },
-                "submitdata":function (obj) {
-                    var posi = oTable.fnGetPosition(this);
-                    var idrow = oTable.fnGetData(posi[0],0);
-                                                return {
-                                                            "idrow": idrow,
-                                                            "column": columns[posi[1]]                                                      
-                                                    };
-                },
-                "height": "14px",
-                "tooltip": "Cliquer pour éditer...",
-                "indicator" : "<div style=\"text-align: center;\"><img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/working.gif\" border=\"0\" alt=\"Saving...\" title=\"Enregistrement en cours\" /></div>",
-                "placeholder" : ""
-                
-            } );
-            }%';
+            if(!isset($obj->fnDrawCallback)){
+                // jeditable
+                $obj->fnDrawCallback= '%function () {
+                columns = ["operateur","datetime","tracking","codemouv","reference","serie","emplacement","check"];
+                $("#'.$ref_css.' tbody td.edit").editable( "'.$_SERVER['PHP_SELF'].'?json=edit", {
+                    "callback": function( sValue, y ) {
+                        oTable.fnDraw();
+                    },
+                    "submitdata":function (obj) {
+                        var posi = oTable.fnGetPosition(this);
+                        var idrow = oTable.fnGetData(posi[0],0);
+                                                    return {
+                                                                "idrow": idrow,
+                                                                "column": columns[posi[1]]                                                      
+                                                        };
+                    },
+                    "height": "14px",
+                    "tooltip": "Cliquer pour éditer...",
+                    "indicator" : "<div style=\"text-align: center;\"><img src=\"'.DOL_URL_ROOT.'/theme/'.$conf->theme.'/img/working.gif\" border=\"0\" alt=\"Saving...\" title=\"Enregistrement en cours\" /></div>",
+                    "placeholder" : ""
 
+                } );
+                }%';
+            }
             
             $output ='<script type="text/javascript" charset="utf-8">';
             $output.='$(document).ready(function() {';
